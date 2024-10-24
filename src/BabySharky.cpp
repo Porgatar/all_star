@@ -45,10 +45,14 @@ void    AquabotNode::_targetFollower() {
 
     // thrusters test
     static double   TargetPos[2] = {MIN_THRUSTERS_POS, MAX_THRUSTERS_POS};
+    static int      TargetThrust[2] = {MIN_THRUSTERS_THRUST, MIN_THRUSTERS_THRUST};
 
     TargetPos[LEFT] += EPSILON * 5;
     TargetPos[RIGHT] -= EPSILON * 5;
+    TargetThrust[LEFT] += 500;
+    TargetThrust[RIGHT] += 500;
     this->_setThrusterPos(TargetPos);
+    this->_setThrusterThrust(TargetThrust);
 }
 
 //  -   -   -   -   -   Thrusters   -   -   -   -   -   //
@@ -60,10 +64,11 @@ static double clamp(const double value, const double min, const double max) {
 
 void    AquabotNode::_setThrusterPos(double NewTargetPos[2]) {
 
-    static double           CurrentTargetPos[2] = {0, 0};
-    std_msgs::msg::Float64  msg;
-    double                  NewPos;
-    int                     i;
+    std::lock_guard<std::mutex> lock(this->_thrusterPosMutex);
+    static double               CurrentTargetPos[2] = {0, 0};
+    std_msgs::msg::Float64      msg;
+    double                      NewPos;
+    int                         i;
 
     i = LEFT;
     while (i <= RIGHT) {
@@ -72,26 +77,35 @@ void    AquabotNode::_setThrusterPos(double NewTargetPos[2]) {
         if (std::abs(CurrentTargetPos[i] - NewPos) > EPSILON) {
 
             msg.data = NewPos;
-            this->_thrusterPos[i]->publish(msg);
             CurrentTargetPos[i] = NewPos;
+            this->_thrusterPos[i]->publish(msg);
         }
         i++;
     }
 }
 
 //  rework in progress...
-// void    AquabotNode::_setThrusterThrust(int NewTargetThrust[2]) {
+void    AquabotNode::_setThrusterThrust(int NewTargetThrust[2]) {
 
-//     static int              CurrentTargetThrust[2] = {0, 0};
-//     std_msgs::msg::Float64  msg;
+    std::lock_guard<std::mutex> lock(this->_thrusterThrustMutex);
+    static int                  CurrentTargetThrust[2] = {0, 0};
+    std_msgs::msg::Float64      msg;
+    int                         NewThrust;
+    int                         i;
 
-//     if (NewTargetThrust > MAX_THRUSTERS_THRUST)
-//         NewTargetThrust = MAX_THRUSTERS_THRUST;
-//     else if (NewTargetThrust < MIN_THRUSTERS_THRUST)
-//         NewTargetThrust = MIN_THRUSTERS_THRUST;
-//     msg.data = NewTargetThrust;
-//     this->_thrusterThrust[Thruster]->publish(msg);
-// }
+    i = LEFT;
+    while (i <= RIGHT) {
+
+        NewThrust = clamp(NewTargetThrust[i], MIN_THRUSTERS_THRUST, MAX_THRUSTERS_THRUST);
+        if (CurrentTargetThrust[i] != NewThrust) {
+
+            msg.data = NewThrust;
+            CurrentTargetThrust[i] = NewThrust;
+            this->_thrusterThrust[i]->publish(msg);
+        }
+        i++;
+    }
+}
 
 //  rework in progress...
 void    AquabotNode::_setCameraPos(double NewPos) {
@@ -108,7 +122,7 @@ void    AquabotNode::_setCameraPos(double NewPos) {
 
 void AquabotNode::_getGpsPos(const std_msgs::msg::Float64::SharedPtr msg) {
 
-    std::lock_guard<std::mutex>lock(_sensorMutex);
+    std::lock_guard<std::mutex>lock(this->_sensorMutex);
     this->_gpsPos = msg->data;
     RCLCPP_INFO(this->get_logger(), "Received GPS position: %f", msg->data);
 }

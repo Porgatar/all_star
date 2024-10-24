@@ -40,7 +40,7 @@ class AquabotNode : public rclcpp::Node {
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
     void  _setThrusterPos(double [2]);
-    // void  _setThrusterThrust(int [2]);
+    void  _setThrusterThrust(int [2]);
 
     // sensors
     void  _setCameraPos(double);
