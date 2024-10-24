@@ -1,5 +1,8 @@
+#pragma once
+
 #include <chrono>
 #include <functional>
+#include <mutex>
 #include <memory>
 #include <string>
 
@@ -12,23 +15,60 @@
 
 using namespace std::chrono_literals;
 
-class AquabotNode : public rclcpp::Node
-{
+#define LEFT                  0
+#define RIGHT                 1
+#define MAX_CAMERA_POS        6.283185
+//30718
+#define EPSILON               0.017453
+//3
+#define MAX_THRUSTERS_POS     0.785398
+//16339
+#define MIN_THRUSTERS_POS     -0.785398
+//16339
+#define MAX_THRUSTERS_THRUST  5000
+#define MIN_THRUSTERS_THRUST  -5000
+
+class AquabotNode : public rclcpp::Node {
+
   public:
     AquabotNode();
 
   private:
-    void timer_callback();
+    //  - - - - - Commands Loops - - - - - //
+    void  _targetFollower();
 
-    void placeholder();
+    //  - - - - - Commands Publisher  - - - - - //
+    // Thrusters
+    void  _setThrusterPos(double [2]);
+    // void  _setThrusterThrust(int [2]);
 
-    // Declare publishers
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr example_publisher;
+    // sensors
+    void  _setCameraPos(double);
 
-    // Declare subscribers
+    //  - - - - - Commands Subscribers  - - - - - //
+    // Sensors
+    void  _getGpsPos(const std_msgs::msg::Float64::SharedPtr);
 
-    // Declare timers
-    rclcpp::TimerBase::SharedPtr  m_timer;
-    rclcpp::TimerBase::SharedPtr  m_placeholder_timer;
+    //  - - - - - Main Variables  - - - - - //
+    double _gpsPos;
 
+    //  - - - - - Publishers  - - - - - //
+    // Thrusters
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _thrusterPos[2];
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _thrusterThrust[2];
+
+    // Camera
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _cameraPos;
+
+    // -  - - - - Subscribers  - - - - - //
+    // Sensors
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr _gpsSub;
+
+    //  - - - - - Loops - - - - - //
+    rclcpp::TimerBase::SharedPtr  _targetFollowerTimer;
+
+    //  - - - - - Mutexes  - - - - - //
+    std::mutex  _sensorMutex;
+    std::mutex  _thrusterPosMutex;
+    std::mutex  _thrusterThrustMutex;
 };

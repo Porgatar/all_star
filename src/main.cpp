@@ -3,8 +3,11 @@
 int main(int argc, char ** argv) {
 
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<AquabotNode>());
-  rclcpp::shutdown();
+  rclcpp::executors::MultiThreadedExecutor  executor;
+  std::shared_ptr<AquabotNode>  node = std::make_shared<AquabotNode>();
 
+  executor.add_node(node);
+  executor.spin();
+  rclcpp::shutdown();
   return 0;
 }
