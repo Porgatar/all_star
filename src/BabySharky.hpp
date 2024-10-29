@@ -17,14 +17,11 @@ using namespace std::chrono_literals;
 
 #define LEFT                  0
 #define RIGHT                 1
-#define MAX_CAMERA_POS        6.283185
-//30718
 #define EPSILON               0.017453
-//3
+// #define MAX_CAMERA_POS        3.141592
+// #define MIN_CAMERA_POS        -3.141592
 #define MAX_THRUSTERS_POS     0.785398
-//16339
 #define MIN_THRUSTERS_POS     -0.785398
-//16339
 #define MAX_THRUSTERS_THRUST  5000
 #define MIN_THRUSTERS_THRUST  -5000
 

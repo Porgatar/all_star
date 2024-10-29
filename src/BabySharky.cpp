@@ -41,86 +41,93 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_targetFollowerTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_targetFollower, this));
 }
 
+//  -   -   -   -   -   Main services   -   -   -   -   -   //
+
 void    AquabotNode::_targetFollower() {
 
     // thrusters test
     static double   TargetPos[2] = {MIN_THRUSTERS_POS, MAX_THRUSTERS_POS};
+    static double   TargetCameraPos = 0;
     static int      TargetThrust[2] = {MIN_THRUSTERS_THRUST, MIN_THRUSTERS_THRUST};
 
     TargetPos[LEFT] += EPSILON * 5;
     TargetPos[RIGHT] -= EPSILON * 5;
+    TargetCameraPos += EPSILON * 10;
     TargetThrust[LEFT] += 500;
     TargetThrust[RIGHT] += 500;
-    this->_setThrusterPos(TargetPos);
-    this->_setThrusterThrust(TargetThrust);
+    // this->_setThrusterPos(TargetPos);
+    // this->_setThrusterThrust(TargetThrust);
+    this->_setCameraPos(TargetCameraPos);
 }
 
 //  -   -   -   -   -   Thrusters   -   -   -   -   -   //
-
-static double clamp(const double value, const double min, const double max) {
-
-    return (std::max(min, std::min(max, value)));
-}
 
 void    AquabotNode::_setThrusterPos(double NewTargetPos[2]) {
 
     std::lock_guard<std::mutex> lock(this->_thrusterPosMutex);
     static double               CurrentTargetPos[2] = {0, 0};
-    std_msgs::msg::Float64      msg;
     double                      NewPos;
     int                         i;
+    std_msgs::msg::Float64      msg;
 
     i = LEFT;
     while (i <= RIGHT) {
 
-        NewPos = clamp(NewTargetPos[i], MIN_THRUSTERS_POS, MAX_THRUSTERS_POS);
+        NewPos = std::max(MIN_THRUSTERS_POS, std::min(MAX_THRUSTERS_POS, NewTargetPos[i]));
         if (std::abs(CurrentTargetPos[i] - NewPos) > EPSILON) {
 
             msg.data = NewPos;
-            CurrentTargetPos[i] = NewPos;
             this->_thrusterPos[i]->publish(msg);
+            CurrentTargetPos[i] = NewPos;
         }
         i++;
     }
 }
 
-//  rework in progress...
 void    AquabotNode::_setThrusterThrust(int NewTargetThrust[2]) {
 
     std::lock_guard<std::mutex> lock(this->_thrusterThrustMutex);
     static int                  CurrentTargetThrust[2] = {0, 0};
-    std_msgs::msg::Float64      msg;
     int                         NewThrust;
     int                         i;
+    std_msgs::msg::Float64      msg;
 
     i = LEFT;
     while (i <= RIGHT) {
 
-        NewThrust = clamp(NewTargetThrust[i], MIN_THRUSTERS_THRUST, MAX_THRUSTERS_THRUST);
+        NewThrust = std::max(MIN_THRUSTERS_THRUST, std::min(MAX_THRUSTERS_THRUST, NewTargetThrust[i]));
         if (CurrentTargetThrust[i] != NewThrust) {
 
             msg.data = NewThrust;
-            CurrentTargetThrust[i] = NewThrust;
             this->_thrusterThrust[i]->publish(msg);
+            CurrentTargetThrust[i] = NewThrust;
         }
         i++;
     }
 }
 
-//  rework in progress...
+//  -   -   -   -   -   Sensors   -   -   -   -   -   //
+
 void    AquabotNode::_setCameraPos(double NewPos) {
 
-    std_msgs::msg::Float64   msg;
+    std::lock_guard<std::mutex> lock(this->_sensorMutex);
+    static double               CurrentTargetPos = 0;
+    std_msgs::msg::Float64      msg;
 
-    while (NewPos > MAX_CAMERA_POS)
-        NewPos -= MAX_CAMERA_POS;
-    while (NewPos < 0)
-        NewPos += MAX_CAMERA_POS;
-    msg.data = NewPos;
-    this->_cameraPos->publish(msg);
+    // while (NewPos > MAX_CAMERA_POS)
+    //     NewPos -= MAX_CAMERA_POS * 2;
+    // while (NewPos < MIN_CAMERA_POS)
+    //     NewPos += MAX_CAMERA_POS * 2;
+    if (abs(CurrentTargetPos - NewPos) > EPSILON) {
+
+        msg.data = NewPos;
+        this->_cameraPos->publish(msg);
+        CurrentTargetPos = NewPos;
+        RCLCPP_INFO(this->get_logger(), "Camera pos set to %f", NewPos);
+    }
 }
 
-void AquabotNode::_getGpsPos(const std_msgs::msg::Float64::SharedPtr msg) {
+void    AquabotNode::_getGpsPos(const std_msgs::msg::Float64::SharedPtr msg) {
 
     std::lock_guard<std::mutex>lock(this->_sensorMutex);
     this->_gpsPos = msg->data;
