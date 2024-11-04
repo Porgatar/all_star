@@ -13,11 +13,14 @@ find_package(ament_cmake REQUIRED)
 
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
+find_package(sensor_msgs REQUIRED)
+# find_package(tf2 REQUIRED)
+# find_package(tf2_ros REQUIRED)
+
+message(STATUS "Include dirs: ${CMAKE_INCLUDE_PATH}")
 
 add_executable(BabySharky src/main.cpp src/BabySharky.cpp)
-ament_target_dependencies(BabySharky rclcpp std_msgs tf2 tf2_ros)
+ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs) # tf2 tf2_ros)
 target_include_directories(BabySharky PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

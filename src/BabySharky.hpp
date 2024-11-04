@@ -8,10 +8,11 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "std_msgs/msg/float64.hpp"
+#include "sensor_msgs/msg/nav_sat_fix.hpp"
 
-#include "tf2/exceptions.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/buffer.h"
+// #include "tf2/exceptions.h"
+// #include "tf2_ros/transform_listener.h"
+// #include "tf2_ros/buffer.h"
 
 using namespace std::chrono_literals;
 
@@ -44,7 +45,7 @@ class AquabotNode : public rclcpp::Node {
 
     //  - - - - - Commands Subscribers  - - - - - //
     // Sensors
-    void  _getGpsPos(const std_msgs::msg::Float64::SharedPtr);
+    void  _getGpsPos(const sensor_msgs::msg::NavSatFix::SharedPtr);
 
     //  - - - - - Main Variables  - - - - - //
     double _gpsPos;
@@ -59,7 +60,7 @@ class AquabotNode : public rclcpp::Node {
 
     // -  - - - - Subscribers  - - - - - //
     // Sensors
-    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr _gpsSub;
+    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr  _gpsSub;
 
     //  - - - - - Loops - - - - - //
     rclcpp::TimerBase::SharedPtr  _targetFollowerTimer;

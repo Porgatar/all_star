@@ -31,7 +31,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_gpsPos = 0;
 
     //    -   -   -   -   -   Subscription    -   -   -   -   -   //
-    this->_gpsSub = this->create_subscription<std_msgs::msg::Float64> \
+    this->_gpsSub = this->create_subscription<sensor_msgs::msg::NavSatFix> \
         ("/aquabot/sensors/gps/gps/fix", \
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_getGpsPos, this, std::placeholders::_1)
@@ -127,9 +127,10 @@ void    AquabotNode::_setCameraPos(double NewPos) {
     }
 }
 
-void    AquabotNode::_getGpsPos(const std_msgs::msg::Float64::SharedPtr msg) {
+void    AquabotNode::_getGpsPos(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
 
     std::lock_guard<std::mutex>lock(this->_sensorMutex);
-    this->_gpsPos = msg->data;
-    RCLCPP_INFO(this->get_logger(), "Received GPS position: %f", msg->data);
+    // this->_gpsPos = msg->longitude;
+    (void)msg;
+    // RCLCPP_INFO(this->get_logger(), "Received GPS position: %f", msg->data);
 }
