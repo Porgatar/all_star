@@ -16,6 +16,8 @@
 
 using namespace std::chrono_literals;
 
+#define X                     0
+#define Y                     1
 #define LEFT                  0
 #define RIGHT                 1
 #define EPSILON               0.017453
@@ -48,7 +50,8 @@ class AquabotNode : public rclcpp::Node {
     void  _getGpsPos(const sensor_msgs::msg::NavSatFix::SharedPtr);
 
     //  - - - - - Main Variables  - - - - - //
-    double _gpsPos;
+    double  _gpsPos[2];
+    double  _targetGpsPos[2];
 
     //  - - - - - Publishers  - - - - - //
     // Thrusters
@@ -66,7 +69,8 @@ class AquabotNode : public rclcpp::Node {
     rclcpp::TimerBase::SharedPtr  _targetFollowerTimer;
 
     //  - - - - - Mutexes  - - - - - //
-    std::mutex  _sensorMutex;
+    std::mutex  _cameraMutex;
+    std::mutex  _gpsMutex;
     std::mutex  _thrusterPosMutex;
     std::mutex  _thrusterThrustMutex;
 };
