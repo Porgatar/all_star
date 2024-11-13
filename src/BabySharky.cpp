@@ -4,10 +4,17 @@ AquabotNode::AquabotNode() : Node("all_star") {
 
     RCLCPP_INFO(this->get_logger(), "Hello world from baby-sharky node in cpp!");
 
+    // placeholder targets...
     this->_gpsPos[X] = 0;
     this->_gpsPos[Y] = 0;
-    this->_targetGpsPos[X] = -4.97; // placeholder
-    this->_targetGpsPos[Y] = 48.04; // placeholder
+    this->_targetGpsPos[X] = -4.97;
+    this->_targetGpsPos[Y] = 48.04;
+    this->_acceleration[X] = 0;
+    this->_acceleration[Y] = 0;
+    this->_targetAcceleration[X] = 10.1;
+    this->_targetAcceleration[Y] = 10.1;
+    this->_rotation = 0;
+    this->_targetRotation = EPSILON * 45;
 
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //
     // Thrusters
@@ -38,24 +45,29 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_gpsSub = this->create_subscription<sensor_msgs::msg::NavSatFix> \
         ("/aquabot/sensors/gps/gps/fix", \
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
-        std::bind(&AquabotNode::_getGpsPos, this, std::placeholders::_1)
+        std::bind(&AquabotNode::_gpsPosCallback, this, std::placeholders::_1)
+    );
+    this->_imuSub = this->create_subscription<sensor_msgs::msg::Imu> \
+        ("/aquabot/sensors/imu/imu/data", \
+        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
+        std::bind(&AquabotNode::_imuDataCallback, this, std::placeholders::_1)
     );
 
-    // loops
-    this->_targetFollowerTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_targetFollower, this));
+    // callback loops
+    this->_placeholderCallbackTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_placeholderCallback, this));
 }
 
 //  -   -   -   -   -   Main services   -   -   -   -   -   //
 
 // test function
-void    AquabotNode::_targetFollower() {
+void    AquabotNode::_placeholderCallback() {
 
     static double                   TargetCameraPos = 0;
     static double                   TargetPos[2] = {MIN_THRUSTERS_POS, MAX_THRUSTERS_POS};
     static int                      TargetThrust[2] = {MIN_THRUSTERS_THRUST, MIN_THRUSTERS_THRUST};
     std::unique_lock<std::mutex>    lock(this->_gpsMutex);
 
-    RCLCPP_INFO(this->get_logger(), "distance to parkour x = %f, y = %f", this->_targetGpsPos[X] - this->_gpsPos[X], this->_targetGpsPos[Y] - this->_gpsPos[Y]);
+    // RCLCPP_INFO(this->get_logger(), "distance to parkour x = %f, y = %f", this->_targetGpsPos[X] - this->_gpsPos[X], this->_targetGpsPos[Y] - this->_gpsPos[Y]);
     lock.unlock();
 
     TargetPos[LEFT] += EPSILON * 5;
@@ -136,10 +148,39 @@ void    AquabotNode::_setCameraPos(double NewPos) {
     }
 }
 
-void    AquabotNode::_getGpsPos(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+void    AquabotNode::_gpsPosCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
 
     std::lock_guard<std::mutex> lock(this->_gpsMutex);
 
     this->_gpsPos[X] = msg->longitude;
     this->_gpsPos[Y] = msg->latitude;
+}
+
+void    AquabotNode::_getGpsPos(double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_gpsMutex);
+
+    gpsPos[X] = this->_gpsPos[X];
+    gpsPos[Y] = this->_gpsPos[Y];
+}
+
+void    AquabotNode::_imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+
+    std::lock_guard<std::mutex> lock(this->_imuMutex);
+
+    this->_acceleration[X] = msg->linear_acceleration.x;
+    this->_acceleration[Y] = msg->linear_acceleration.y;
+    this->_angularAcceleration = msg->angular_velocity.z;
+    this->_rotation = msg->orientation.z;
+    // RCLCPP_INFO(this->get_logger(), "x %f, y %f, z %f, z rot %f", msg->linear_acceleration.x, msg->linear_acceleration.y, msg->angular_velocity.z, msg->orientation.z);
+}
+
+void    AquabotNode::_getImuData(double acceleration[2], double * angularAcceleration, double * rotation) {
+
+    std::lock_guard<std::mutex> lock(this->_imuMutex);
+
+    acceleration[X] = this->_acceleration[X];
+    acceleration[Y] = this->_acceleration[Y];
+    *angularAcceleration = this->_angularAcceleration;
+    *rotation = this->_rotation;
 }
