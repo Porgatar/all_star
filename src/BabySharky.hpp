@@ -1,19 +1,11 @@
 #pragma once
 
-#include <chrono>
-#include <functional>
-#include <mutex>
-#include <memory>
-#include <string>
-
 #include <rclcpp/rclcpp.hpp>
+#include <mutex>
 #include "std_msgs/msg/float64.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "sensor_msgs/msg/imu.hpp"
-
-// #include "tf2/exceptions.h"
-// #include "tf2_ros/transform_listener.h"
-// #include "tf2_ros/buffer.h"
+#include "ros_gz_interfaces/msg/param_vec.hpp"
 
 using namespace std::chrono_literals;
 
@@ -48,10 +40,12 @@ class AquabotNode : public rclcpp::Node {
 
     //  - - - - - Commands Subscribers  - - - - - //
     // Sensors
-    void  _gpsPosCallback(const sensor_msgs::msg::NavSatFix::SharedPtr);
-    void  _getGpsPos(double [2]);
+    void  _gpsDataCallback(const sensor_msgs::msg::NavSatFix::SharedPtr);
+    void  _getGpsData(double [2]);
     void  _imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr);
-    void  _getImuData(double [2], double *, double *);
+    void  _getImuData(double [2], double &, double &);
+    void  _pingerDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr);
+    void  _getPingerData(void);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsPos[2];
@@ -60,11 +54,11 @@ class AquabotNode : public rclcpp::Node {
     double  _acceleration[2];
     double  _targetAcceleration[2];
 
-    double  _angularAcceleration;
-    double  _targetAngularAcceleration;
+    double  _angularVelocity;
+    double  _targetAngularVelocity;
 
-    double  _rotation;
-    double  _targetRotation;
+    double  _orientation;
+    double  _targetOrientation;
 
     //  - - - - - Publishers  - - - - - //
     // Thrusters
@@ -76,16 +70,18 @@ class AquabotNode : public rclcpp::Node {
 
     // -  - - - - Subscribers  - - - - - //
     // Sensors
-    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr  _gpsSub;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr        _imuSub;
+    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr      _gpsSub;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr            _imuSub;
+    rclcpp::Subscription<ros_gz_interfaces::msg::ParamVec>::SharedPtr _pingerSub;
 
     //  - - - - - Loops - - - - - //
     rclcpp::TimerBase::SharedPtr  _placeholderCallbackTimer;
 
     //  - - - - - Mutexes  - - - - - //
+    std::mutex  _thrusterPosMutex;
+    std::mutex  _thrusterThrustMutex;
     std::mutex  _cameraMutex;
     std::mutex  _gpsMutex;
     std::mutex  _imuMutex;
-    std::mutex  _thrusterPosMutex;
-    std::mutex  _thrusterThrustMutex;
+    std::mutex  _pingerMutex;
 };
