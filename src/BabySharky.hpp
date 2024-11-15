@@ -13,6 +13,8 @@ using namespace std::chrono_literals;
 #define Y                     1
 #define LEFT                  0
 #define RIGHT                 1
+#define RANGE                 0
+#define BEARING               1
 #define EPSILON               0.017453
 // #define MAX_CAMERA_POS        3.141592
 // #define MIN_CAMERA_POS        -3.141592
@@ -28,7 +30,7 @@ class AquabotNode : public rclcpp::Node {
 
   private:
     //  - - - - - Commands Loops - - - - - //
-    void  _placeholderCallback();
+    // void  _placeholderCallback();
 
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
@@ -41,11 +43,13 @@ class AquabotNode : public rclcpp::Node {
     //  - - - - - Commands Subscribers  - - - - - //
     // Sensors
     void  _gpsDataCallback(const sensor_msgs::msg::NavSatFix::SharedPtr);
-    void  _getGpsData(double [2]);
     void  _imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr);
+    void  _criticalWindTurbinDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr);
+
+    //  - - - - - Commands Getters  - - - - - //
+    void  _getGpsData(double [2]);
     void  _getImuData(double [2], double &, double &);
-    void  _pingerDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr);
-    void  _getPingerData(void);
+    void  _getCriticalWindTurbinData(double [2]);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsPos[2];
@@ -60,6 +64,8 @@ class AquabotNode : public rclcpp::Node {
     double  _orientation;
     double  _targetOrientation;
 
+    double  _criticalWindTurbin[2];
+
     //  - - - - - Publishers  - - - - - //
     // Thrusters
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _thrusterPos[2];
@@ -72,10 +78,10 @@ class AquabotNode : public rclcpp::Node {
     // Sensors
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr      _gpsSub;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr            _imuSub;
-    rclcpp::Subscription<ros_gz_interfaces::msg::ParamVec>::SharedPtr _pingerSub;
+    rclcpp::Subscription<ros_gz_interfaces::msg::ParamVec>::SharedPtr _criticalWindTurbinSub;
 
     //  - - - - - Loops - - - - - //
-    rclcpp::TimerBase::SharedPtr  _placeholderCallbackTimer;
+    // rclcpp::TimerBase::SharedPtr  _placeholderCallbackTimer;
 
     //  - - - - - Mutexes  - - - - - //
     std::mutex  _thrusterPosMutex;
@@ -83,5 +89,5 @@ class AquabotNode : public rclcpp::Node {
     std::mutex  _cameraMutex;
     std::mutex  _gpsMutex;
     std::mutex  _imuMutex;
-    std::mutex  _pingerMutex;
+    std::mutex  _criticalWindTurbinMutex;
 };

@@ -21,6 +21,9 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_orientation = 0;
     this->_targetOrientation = EPSILON * 45;
 
+    this->_criticalWindTurbin[RANGE] = 0;
+    this->_criticalWindTurbin[BEARING] = 0;
+
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //
     // Thrusters
     this->_thrusterPos[LEFT] = this->create_publisher<std_msgs::msg::Float64> \
@@ -57,39 +60,42 @@ AquabotNode::AquabotNode() : Node("all_star") {
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_imuDataCallback, this, std::placeholders::_1)
     );
-    this->_pingerSub = this->create_subscription<ros_gz_interfaces::msg::ParamVec> \
+    this->_criticalWindTurbinSub = this->create_subscription<ros_gz_interfaces::msg::ParamVec> \
         ("/aquabot/sensors/acoustics/receiver/range_bearing", \
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
-        std::bind(&AquabotNode::_pingerDataCallback, this, std::placeholders::_1)
+        std::bind(&AquabotNode::_criticalWindTurbinDataCallback, this, std::placeholders::_1)
     );
 
     // callback loops
-    this->_placeholderCallbackTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_placeholderCallback, this));
+    // this->_placeholderCallbackTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_placeholderCallback, this));
 }
 
 //  -   -   -   -   -   Main services   -   -   -   -   -   //
 
 // test function
-void    AquabotNode::_placeholderCallback() {
+// void    AquabotNode::_placeholderCallback() {
 
-    static double                   TargetCameraPos = 0;
-    static double                   TargetPos[2] = {MIN_THRUSTERS_POS, MAX_THRUSTERS_POS};
-    static int                      TargetThrust[2] = {MAX_THRUSTERS_THRUST, MAX_THRUSTERS_THRUST};
-    // double                          currentAcceleration[2];
-    // double                          currentAngularVelocity;
-    // double                          currentOrientation;
+//     static double                   TargetCameraPos = 0;
+//     static double                   TargetPos[2] = {MIN_THRUSTERS_POS, MAX_THRUSTERS_POS};
+//     static int                      TargetThrust[2] = {MAX_THRUSTERS_THRUST, MAX_THRUSTERS_THRUST};
+//     // double                          gpsPos[2];
+//     // double                          currentAcceleration[2];
+//     // double                          currentOrientation;
+//     // double                          currentAngularVelocity;
+//     double                          criticalWindTurbin[2];
 
+//     this->_getCriticalWindTurbinData(criticalWindTurbin);
+//     RCLCPP_INFO(this->get_logger(), "range = %f, bearing = %f", criticalWindTurbin[RANGE], criticalWindTurbin[BEARING]);
+//     // RCLCPP_INFO(this->get_logger(), "distance to parkour x = %f, y = %f", this->_targetGpsPos[X] - this->_gpsPos[X], this->_targetGpsPos[Y] - this->_gpsPos[Y]);
+//     // this->_getImuData(currentAcceleration, currentAngularVelocity, currentOrientation);
+//     // RCLCPP_INFO(this->get_logger(), "x %f, y %f, z %f, z rot %f", currentAcceleration[X], currentAcceleration[Y], currentAngularVelocity, currentOrientation);
+//     TargetCameraPos += EPSILON * 10;
+//     this->_setThrusterPos(TargetPos);
+//     this->_setThrusterThrust(TargetThrust);
+//     this->_setCameraPos(TargetCameraPos);
+// }
 
-    // RCLCPP_INFO(this->get_logger(), "distance to parkour x = %f, y = %f", this->_targetGpsPos[X] - this->_gpsPos[X], this->_targetGpsPos[Y] - this->_gpsPos[Y]);
-    // this->_getImuData(currentAcceleration, currentAngularVelocity, currentOrientation);
-    // RCLCPP_INFO(this->get_logger(), "x %f, y %f, z %f, z rot %f", currentAcceleration[X], currentAcceleration[Y], currentAngularVelocity, currentOrientation);
-    TargetCameraPos += EPSILON * 10;
-    this->_setThrusterPos(TargetPos);
-    this->_setThrusterThrust(TargetThrust);
-    this->_setCameraPos(TargetCameraPos);
-}
-
-//  -   -   -   -   -   Thrusters   -   -   -   -   -   //
+//  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
 
 void    AquabotNode::_setThrusterPos(double NewTargetPos[2]) {
 
@@ -135,7 +141,7 @@ void    AquabotNode::_setThrusterThrust(int NewTargetThrust[2]) {
     }
 }
 
-//  -   -   -   -   -   Sensors   -   -   -   -   -   //
+//  -   -   -   -   -   Sensors Publisher   -   -   -   -   -   //
 
 // rework needed for optimisation...
 void    AquabotNode::_setCameraPos(double NewPos) {
@@ -157,20 +163,14 @@ void    AquabotNode::_setCameraPos(double NewPos) {
     }
 }
 
+//  -   -   -   -   -   Sensors Subscribers  -   -   -   -   -   //
+
 void    AquabotNode::_gpsDataCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
 
     std::lock_guard<std::mutex> lock(this->_gpsMutex);
 
     this->_gpsPos[X] = msg->longitude;
     this->_gpsPos[Y] = msg->latitude;
-}
-
-void    AquabotNode::_getGpsData(double gpsPos[2]) {
-
-    std::lock_guard<std::mutex> lock(this->_gpsMutex);
-
-    gpsPos[X] = this->_gpsPos[X];
-    gpsPos[Y] = this->_gpsPos[Y];
 }
 
 void    AquabotNode::_imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
@@ -183,6 +183,29 @@ void    AquabotNode::_imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr msg
     this->_orientation = msg->orientation.z;
 }
 
+void    AquabotNode::_criticalWindTurbinDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr msg) {
+
+    std::lock_guard<std::mutex> lock(this->_criticalWindTurbinMutex);
+
+    for (const auto &param : msg->params) {
+
+        if (param.name == "range")
+            this->_criticalWindTurbin[RANGE] = param.value.double_value;
+        else if (param.name == "bearing")
+            this->_criticalWindTurbin[BEARING] = param.value.double_value;
+    }
+}
+
+//  -   -   -   -   -   Sensors Getters  -   -   -   -   -   //
+
+void    AquabotNode::_getGpsData(double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_gpsMutex);
+
+    gpsPos[X] = this->_gpsPos[X];
+    gpsPos[Y] = this->_gpsPos[Y];
+}
+
 void    AquabotNode::_getImuData(double acceleration[2], double & angularVelocity, double & orientation) {
 
     std::lock_guard<std::mutex> lock(this->_imuMutex);
@@ -193,26 +216,10 @@ void    AquabotNode::_getImuData(double acceleration[2], double & angularVelocit
     orientation = this->_orientation;
 }
 
-void    AquabotNode::_pingerDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr msg) {
+void    AquabotNode::_getCriticalWindTurbinData(double criticalWindTurbin[2]) {
 
-    std::lock_guard<std::mutex> lock(this->_pingerMutex);
-    double range;
-    double elevation;
-    double bearing;
+    std::lock_guard<std::mutex> lock(this->_criticalWindTurbinMutex);
 
-    for (const auto &param : msg->params) {
-
-        if (param.name == "range")
-            range = param.value.double_value;
-        else if (param.name == "elevation")
-            elevation = param.value.double_value;
-        else if (param.name == "bearing")
-            bearing = param.value.double_value;
-    }
-    RCLCPP_INFO(this->get_logger(), "range: %f, elevation: %f, bearing: %f", range, elevation, bearing);
-}
-
-void    AquabotNode::_getPingerData() {
-
-    std::lock_guard<std::mutex> lock(this->_pingerMutex);
+    criticalWindTurbin[RANGE] = this->_criticalWindTurbin[RANGE];
+    criticalWindTurbin[BEARING] = this->_criticalWindTurbin[BEARING];
 }
