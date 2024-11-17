@@ -55,10 +55,13 @@ class AquabotNode : public rclcpp::Node {
     // void  _imageDataCallback(const sensor_msgs::msg::Image::SharedPtr);
 
     //  - - - - - Commands Getters  - - - - - //
-    void  _degToMeter(double [2], double [2]);
     void  _getGpsData(double [2]);
     void  _getImuData(double [2], double &, double &);
     void  _getCriticalWindTurbinData(double [2]);
+
+    //  - - - - - Commands Utils  - - - - - //
+    void  _degToMeter(double [2]);
+    void  _meterToDeg(double [2]);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsOrigin[2];

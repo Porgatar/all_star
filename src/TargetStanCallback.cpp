@@ -123,27 +123,25 @@ static double	dist(double ax, double ay, double bx, double by)
 void	AquabotNode::_targetStanCallback() {
 
 	double	gpsPos[2];
-	double	targetGpsPos[2] = {-0.086853 + 250 / 4267220, 0.838566 + 200 / 6378137.0}; // (y;x)-0.086853 + 250 / 4267220
+	this->_getGpsData(gpsPos);
+	// RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
+
+	double	targetGpsPos[2] = {-70, 60};
 
 	double	setThrusterPos[2];
-	double	orientationTarget;
+
 	double	acceleration[2];
 	double	angularVelocity;
 	double	orientation;
-	int		Thrust[2];
-	double	delta_orientation;
-	double	distance;
-
-	this->_getGpsData(gpsPos);
 	this->_getImuData(acceleration, angularVelocity, orientation);
 
-	orientationTarget = atan2(targetGpsPos[1] - gpsPos[1], targetGpsPos[0] - gpsPos[0]); // c'eat d'abord et x en deuxieme arg, mais ferme la
-	distance =  dist(gpsPos[0], gpsPos[1], targetGpsPos[0], targetGpsPos[1]);
+	int		Thrust[2];
 
+	double orientationTarget = atan2(targetGpsPos[1] - gpsPos[1], targetGpsPos[0] - gpsPos[0]);
 	// RCLCPP_INFO(this->get_logger(), "targer_o = %f o = %f resultat = %f", orientationTarget, orientation, orientationTarget - orientation);
-	RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
-	RCLCPP_INFO(this->get_logger(), "target = %f;%f", targetGpsPos[0], targetGpsPos[1]);
-	RCLCPP_INFO(this->get_logger(), "distance = %f", distance);
+
+	double distance =  dist(gpsPos[0], gpsPos[1], targetGpsPos[0], targetGpsPos[1]);
+	// RCLCPP_INFO(this->get_logger(), "distance = %f", distance);
 
 	if (distance < 0.000003) // moin de ... metre -> procedure de detection des eolienne
 	{
@@ -157,32 +155,46 @@ void	AquabotNode::_targetStanCallback() {
 		return ;
 	}
 
-	delta_orientation = -1 * (orientationTarget - orientation);
+	double delta_orientation = -1 * (orientationTarget - orientation);
 
+	// RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
 	if (delta_orientation > 10 * EPSILON || delta_orientation < 10 * -EPSILON)
 	{
+
 		setThrusterPos[LEFT] = delta_orientation;
-		setThrusterPos[RIGHT] = 0;
+		setThrusterPos[RIGHT] = delta_orientation * -1;
 		this->_setThrusterPos(setThrusterPos);
 
-		Thrust[LEFT] = 30;
-		Thrust[RIGHT] = 0;
+		// double delta_power;
+		if (delta_orientation > 0) { // produit en croix (100->70)
+			Thrust[LEFT] = 0;
+			Thrust[RIGHT] = (int)((100 * ((delta_orientation * -1) / EPSILON)) * 0.05);
+		}
+		else {
+			Thrust[LEFT] = (int)((100 * (delta_orientation / EPSILON)) * 0.05);
+			Thrust[RIGHT] = 0;
+		}
+
+		// Thrust[LEFT] = (int)delta_power;
+		// Thrust[RIGHT] = 0;
 		this->_setThrusterThrust(Thrust);
 
 	}
 	else {
-		if (delta_orientation > 3 * EPSILON || delta_orientation < 3 * -EPSILON)
+		if (delta_orientation > EPSILON || delta_orientation < -EPSILON)
 		{
-			if (delta_orientation > 0.785398) // evite les coup de truster de 45 degree
-				delta_orientation = 25 * EPSILON;
-			else if (delta_orientation < -0.785398)
-				delta_orientation = 25 * -EPSILON;
 
-			setThrusterPos[LEFT] = delta_orientation;
-			setThrusterPos[RIGHT] = 0;
+			if (delta_orientation < 0) {
+				setThrusterPos[LEFT] = -EPSILON * 0.8;
+				setThrusterPos[RIGHT] = -EPSILON * 0.8;
+			}
+			else {
+				setThrusterPos[LEFT] = EPSILON * 0.8;
+				setThrusterPos[RIGHT] = EPSILON * 0.8;
+			}
 			this->_setThrusterPos(setThrusterPos);
-			Thrust[LEFT] = 70;
-			Thrust[RIGHT] = 500;
+			Thrust[LEFT] = 2000;
+			Thrust[RIGHT] = 2000;
 		}
 		else
 		{

@@ -202,7 +202,9 @@ void    AquabotNode::_getGpsData(double gpsPos[2]) {
 
     std::lock_guard<std::mutex> lock(this->_gpsMutex);
 
-    this->_degToMeter(gpsPos, this->_gpsPos);
+    gpsPos[X] = this->_gpsPos[X];
+    gpsPos[Y] = this->_gpsPos[Y];
+    this->_degToMeter(gpsPos);
 }
 
 void    AquabotNode::_getImuData(double acceleration[2], double & angularVelocity, double & orientation) {
@@ -225,10 +227,24 @@ void    AquabotNode::_getCriticalWindTurbinData(double criticalWindTurbin[2]) {
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //
 
-void    AquabotNode::_degToMeter(double newGpsPos[2], double gpsPos[2]) {
+void    AquabotNode::_degToMeter(double gpsPos[2]) {
 
     std::lock_guard<std::mutex> lock(this->_gpsOriginMutex);
+    double                      newGpsPos[2];
 
     newGpsPos[X] = (gpsPos[X] - this->_gpsOrigin[X]) * 111320 * cos(gpsPos[Y] * M_PI / 180);
     newGpsPos[Y] = (gpsPos[Y] - this->_gpsOrigin[Y]) * 111320;
+    gpsPos[X] = newGpsPos[X];
+    gpsPos[Y] = newGpsPos[Y];
+}
+
+void    AquabotNode::_meterToDeg(double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_gpsOriginMutex);
+    double                      newGpsPos[2];
+
+    newGpsPos[Y] = this->_gpsOrigin[Y] + gpsPos[Y] / 111320;
+    newGpsPos[X] = this->_gpsOrigin[X] + gpsPos[X] / (111320 * cos(newGpsPos[Y] * M_PI / 180));
+    gpsPos[Y] = newGpsPos[Y];
+    gpsPos[X] = newGpsPos[X];
 }
