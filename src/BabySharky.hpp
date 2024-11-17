@@ -1,15 +1,20 @@
 #pragma once
 
+// main node dep
 #include <rclcpp/rclcpp.hpp>
 #include <mutex>
+
+// topics type dep
 #include "std_msgs/msg/float64.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "ros_gz_interfaces/msg/param_vec.hpp"
 
+// image handling dep
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/opencv.hpp>
+#include <zbar.h>
 
 using namespace std::chrono_literals;
 
@@ -27,9 +32,6 @@ using namespace std::chrono_literals;
 #define MAX_THRUSTERS_THRUST  5000
 #define MIN_THRUSTERS_THRUST  -5000
 
-// #define IMAGE_WIDTH 640
-// #define IMAGE_HEIGHT 480
-
 class AquabotNode : public rclcpp::Node {
 
   public:
@@ -37,6 +39,7 @@ class AquabotNode : public rclcpp::Node {
 
   private:
     //  - - - - - Commands Loops - - - - - //
+    void  _imageProcessorCallback();
 
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
@@ -51,13 +54,17 @@ class AquabotNode : public rclcpp::Node {
     void  _gpsDataCallback(const sensor_msgs::msg::NavSatFix::SharedPtr);
     void  _imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr);
     void  _criticalWindTurbinDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr);
-    // void  _imageDataCallback(const sensor_msgs::msg::Image::SharedPtr);
+    void  _imageDataCallback(const sensor_msgs::msg::Image::SharedPtr);
 
     //  - - - - - Commands Getters  - - - - - //
-    void  _degToMeter(double [2], double [2]);
     void  _getGpsData(double [2]);
     void  _getImuData(double [2], double &, double &);
     void  _getCriticalWindTurbinData(double [2]);
+    void  _getImageData(cv::Mat &);
+
+    //  - - - - - Commands Utils  - - - - - //
+    void  _degToMeter(double [2]);
+    void  _meterToDeg(double [2]);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsOrigin[2];
@@ -75,6 +82,8 @@ class AquabotNode : public rclcpp::Node {
 
     double  _criticalWindTurbin[2];
 
+    cv::Mat _lastFrame;
+
     //  - - - - - Publishers  - - - - - //
     // Thrusters
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _thrusterPos[2];
@@ -84,18 +93,19 @@ class AquabotNode : public rclcpp::Node {
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _cameraPos;
 
     // -  - - - - Subscribers  - - - - - //
-    // Sensors
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr      _gpsSub;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr            _imuSub;
     rclcpp::Subscription<ros_gz_interfaces::msg::ParamVec>::SharedPtr _criticalWindTurbinSub;
-    // rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr          _imageSub;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr          _imageSub;
 
     //  - - - - - Loops - - - - - //
+    rclcpp::TimerBase::SharedPtr  _imageProcessorCallbackTimer;
 
     //  - - - - - Mutexes  - - - - - //
     std::mutex  _thrusterPosMutex;
     std::mutex  _thrusterThrustMutex;
     std::mutex  _cameraMutex;
+    std::mutex  _lastFrameMutex;
     std::mutex  _gpsMutex;
     std::mutex  _gpsOriginMutex;
     std::mutex  _imuMutex;

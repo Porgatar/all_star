@@ -26,6 +26,8 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_criticalWindTurbin[RANGE] = 0;
     this->_criticalWindTurbin[BEARING] = 0;
 
+    this->_lastFrame = 0;
+
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //
     // Thrusters
     this->_thrusterPos[LEFT] = this->create_publisher<std_msgs::msg::Float64> \
@@ -67,17 +69,15 @@ AquabotNode::AquabotNode() : Node("all_star") {
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_criticalWindTurbinDataCallback, this, std::placeholders::_1)
     );
-/*    this->_imageSub = this->create_subscription<sensor_msgs::msg::Image> \
+    this->_imageSub = this->create_subscription<sensor_msgs::msg::Image> \
         ("/aquabot/sensors/cameras/main_camera_sensor/image_raw", \
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_imageDataCallback, this, std::placeholders::_1)
-    );*/
+    );
 
     // callback loops
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(2s, std::bind(&AquabotNode::_imageProcessorCallback, this));
 }
-
-//  -   -   -   -   -   Main services   -   -   -   -   -   //
-
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
 
@@ -189,11 +189,12 @@ void    AquabotNode::_criticalWindTurbinDataCallback(const ros_gz_interfaces::ms
     }
 }
 
-// void    AquabotNode::_imageDataCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
+void    AquabotNode::_imageDataCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
 
-//     (void)msg;
-//     this->_setThrusterThrust(te);
-// }
+    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+
+    this->_lastFrame = cv_bridge::toCvCopy(msg, "bgr8")->image;
+}
 
 //  -   -   -   -   -   Sensors Getters  -   -   -   -   -   //
 
@@ -201,7 +202,9 @@ void    AquabotNode::_getGpsData(double gpsPos[2]) {
 
     std::lock_guard<std::mutex> lock(this->_gpsMutex);
 
-    this->_degToMeter(gpsPos, this->_gpsPos);
+    gpsPos[X] = this->_gpsPos[X];
+    gpsPos[Y] = this->_gpsPos[Y];
+    this->_degToMeter(gpsPos);
 }
 
 void    AquabotNode::_getImuData(double acceleration[2], double & angularVelocity, double & orientation) {
@@ -222,12 +225,33 @@ void    AquabotNode::_getCriticalWindTurbinData(double criticalWindTurbin[2]) {
     criticalWindTurbin[BEARING] = this->_criticalWindTurbin[BEARING];
 }
 
+void    AquabotNode::_getImageData(cv::Mat &frame) {
+
+    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+
+    frame = this->_lastFrame;
+}
+
 //  -   -   -   -   -   utils  -   -   -   -   -   //
 
-void    AquabotNode::_degToMeter(double newGpsPos[2], double gpsPos[2]) {
+void    AquabotNode::_degToMeter(double gpsPos[2]) {
 
     std::lock_guard<std::mutex> lock(this->_gpsOriginMutex);
+    double                      newGpsPos[2];
 
     newGpsPos[X] = (gpsPos[X] - this->_gpsOrigin[X]) * 111320 * cos(gpsPos[Y] * M_PI / 180);
     newGpsPos[Y] = (gpsPos[Y] - this->_gpsOrigin[Y]) * 111320;
+    gpsPos[X] = newGpsPos[X];
+    gpsPos[Y] = newGpsPos[Y];
+}
+
+void    AquabotNode::_meterToDeg(double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_gpsOriginMutex);
+    double                      newGpsPos[2];
+
+    newGpsPos[Y] = this->_gpsOrigin[Y] + gpsPos[Y] / 111320;
+    newGpsPos[X] = this->_gpsOrigin[X] + gpsPos[X] / (111320 * cos(newGpsPos[Y] * M_PI / 180));
+    gpsPos[Y] = newGpsPos[Y];
+    gpsPos[X] = newGpsPos[X];
 }

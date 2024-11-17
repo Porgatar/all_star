@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(all_star)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Werror -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Werror -Wextra -Wpedantic -Wconversion -O3)
 endif()
 
 # find dependencies
@@ -12,10 +12,18 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ros_gz_interfaces REQUIRED)
 
-message(STATUS "Include dirs: ${CMAKE_INCLUDE_PATH}")
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(OpenCV REQUIRED)
 
-add_executable(BabySharky src/main.cpp src/BabySharky.cpp)
-ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ZBAR REQUIRED zbar)
+include_directories(${ZBAR_INCLUDE_DIRS})
+link_directories(${ZBAR_LIBRARY_DIRS})
+
+add_executable(BabySharky src/main.cpp src/BabySharky.cpp src/ImageProcessorCallback.cpp)
+ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces cv_bridge image_transport OpenCV)
+target_link_libraries(BabySharky ${ZBAR_LIBRARIES})
 target_include_directories(BabySharky PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
