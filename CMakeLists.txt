@@ -14,7 +14,7 @@ find_package(ros_gz_interfaces REQUIRED)
 
 message(STATUS "Include dirs: ${CMAKE_INCLUDE_PATH}")
 
-add_executable(BabySharky src/main.cpp src/BabySharky.cpp)
+add_executable(BabySharky src/main.cpp src/BabySharky.cpp src/TargetStanCallback.cpp)
 ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces)
 target_include_directories(BabySharky PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

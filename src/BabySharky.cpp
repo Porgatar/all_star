@@ -74,6 +74,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     );*/
 
     // callback loops
+    this->_targetStanCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_targetStanCallback, this));
 }
 
 //  -   -   -   -   -   Main services   -   -   -   -   -   //

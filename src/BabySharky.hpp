@@ -7,9 +7,9 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include "ros_gz_interfaces/msg/param_vec.hpp"
 
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.hpp>
-#include <opencv2/opencv.hpp>
+// #include <cv_bridge/cv_bridge.h>
+// #include <image_transport/image_transport.hpp>
+// #include <opencv2/opencv.hpp>
 
 using namespace std::chrono_literals;
 
@@ -37,6 +37,7 @@ class AquabotNode : public rclcpp::Node {
 
   private:
     //  - - - - - Commands Loops - - - - - //
+    void  _targetStanCallback();
 
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
@@ -91,6 +92,7 @@ class AquabotNode : public rclcpp::Node {
     // rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr          _imageSub;
 
     //  - - - - - Loops - - - - - //
+    rclcpp::TimerBase::SharedPtr  _targetStanCallbackTimer;
 
     //  - - - - - Mutexes  - - - - - //
     std::mutex  _thrusterPosMutex;
