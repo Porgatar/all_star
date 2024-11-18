@@ -79,6 +79,8 @@ class AquabotNode : public rclcpp::Node {
 
     double  _criticalWindTurbin[2];
 
+    int _statmentTrip;
+
     //  - - - - - Publishers  - - - - - //
     // Thrusters
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr  _thrusterPos[2];

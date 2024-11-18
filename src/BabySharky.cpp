@@ -26,6 +26,8 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_criticalWindTurbin[RANGE] = 0;
     this->_criticalWindTurbin[BEARING] = 0;
 
+    this->_statmentTrip = 0;
+
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //
     // Thrusters
     this->_thrusterPos[LEFT] = this->create_publisher<std_msgs::msg::Float64> \
