@@ -76,7 +76,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     );
 
     // callback loops
-    this->_imageProcessorCallbackTimer = this->create_wall_timer(2s, std::bind(&AquabotNode::_imageProcessorCallback, this));
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(16ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
 }
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
@@ -229,7 +229,7 @@ void    AquabotNode::_getImageData(cv::Mat &frame) {
 
     std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
 
-    frame = this->_lastFrame;
+    frame = this->_lastFrame.clone();
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //
