@@ -1,112 +1,5 @@
 #include "BabySharky.hpp"
 
-// #define size_one_block 64 // taille un block dans la map 2D
-// #define dist_max 100000 // hard limit
-// static void ft_raycasting(char **map, int mapX, int mapY, float player_pos[2], float orientation) {
-//     int dof, mx, my; // raport raycasting/map
-//     float rx, ry, ra, xo, yo, vx, vy; // les float pour les point
-//     float px = player_pos[0];
-//     float py = player_pos[1];
-//     float disV = dist_max, disH = dist_max; // distance vertival et horizontal
-//     float Tan;
-// 	int	i = 0;
-
-// 	ra = orientation;
-
-//     // raycast verticale
-//     while (i < 1)
-// 	{
-// 		dof = 0;
-// 		Tan = tan(ra);
-// 		if (cosf(ra) > 0.001)  // Vers la droite
-// 		{
-// 			rx = (((int)px >> 6) << 6) + size_one_block;
-// 			ry = (px - rx) * Tan + py;
-// 			xo = size_one_block;
-// 			yo = -xo * Tan;
-// 		}
-// 		else if (cosf(ra) < -0.001)  // Vers la gauche
-// 		{
-// 			rx = (((int)px >> 6) << 6) - 0.0001;
-// 			ry = (px - rx) * Tan + py;
-// 			xo = -size_one_block;
-// 			yo = -xo * Tan;
-// 		}
-// 		else  // Regard droit ou gauche
-// 		{
-// 			rx = px;
-// 			ry = py;
-// 			dof = 8;
-// 		}
-// 		while (dof < 8) {
-// 			mx = (int)(rx) >> 6;
-// 			my = (int)(ry) >> 6;
-// 			if (mx >= 0 && mx < mapX && my >= 0 && my < mapY && data->map[my][mx] == '1')
-// 			{
-// 				disV = cosf(ra) * (rx - px) - sinf(ra) * (ry - py);  // Calcul de la distance
-// 				vx = rx;
-// 				vy = ry;
-// 				break;
-// 			}
-// 			else
-// 			{
-// 				rx += xo;
-// 				ry += yo;
-// 				dof++;
-// 				if (dof >= dist_max) break;
-// 			}
-// 		}
-
-// 		// raycast horizontal
-// 		dof = 0;
-// 		Tan = 1.0 / Tan;
-// 		if (sinf(ra) > 0.001)  // Vers le haut
-// 		{
-// 			ry = (((int)py >> 6) << 6) - 0.0001;
-// 			rx = (py - ry) * Tan + px;
-// 			yo = -size_one_block;
-// 			xo = -yo * Tan;
-// 		}
-// 		else if (sinf(ra) < -0.001)  // Vers le bas
-// 		{
-// 			ry = (((int)py >> 6) << 6) + size_one_block;
-// 			rx = (py - ry) * Tan + px;
-// 			yo = size_one_block;
-// 			xo = -yo * Tan;
-// 		}
-// 		else  // Droit ou gauche
-// 		{
-// 			rx = px;
-// 			ry = py;
-// 			dof = 8;
-// 		}
-// 		while (dof < 8) {
-// 			mx = (int)(rx) >> 6;
-// 			my = (int)(ry) >> 6;
-// 			if (mx >= 0 && mx < mapX && my >= 0 && my < mapY && data->map[my][mx] == '1')
-// 			{
-// 				disH = cosf(ra) * (rx - px) - sinf(ra) * (ry - py);  // Calcul de la distance
-// 				break;
-// 			}
-// 			else
-// 			{
-// 				rx += xo;
-// 				ry += yo;
-// 				dof++;
-// 				if (dof >= dist_max) break;
-// 			}
-// 		}
-
-// 		// Comparer disH et disV pour afficher le point d'impact le plus proche
-// 		if (disV < disH) { // on tape un wall Vertical (contourner en consequence)
-// 			rx = vx;
-// 			ry = vy;
-// 		}
-
-// 		i++;
-// 	}
-// }
-
 static double	dist(double ax, double ay, double bx, double by)
 {
 	return (sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay)));
@@ -119,7 +12,7 @@ void	AquabotNode::_targetStanCallback() {
 	double	setThrusterPos[2];
  // --------GPS------------- //
 	double	gpsPos[2];
-	double	targetGpsPos[2] = {-70, 60}; // target
+	double	targetGpsPos[2] = {70, -60}; // target
  // --------IMU_DATA-------- //
 	double	orientation;
 	double	acceleration[2];
@@ -133,18 +26,20 @@ void	AquabotNode::_targetStanCallback() {
 	double	delta_orientation = -1 * (orientationTarget - orientation);
  // --------PRINTEUR-------- //
 	// if (this->_statmentTrip < 3)
-	// 	RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
+		RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
 	// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
 	// RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
-	RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
+	// RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
 	// RCLCPP_INFO(this->get_logger(), "targer_o = %f o = %f resultat = %f", orientationTarget, orientation, orientationTarget - orientation);
 
 
 	if (this->_statmentTrip == 0) { // premiere fase du trajet -> stab sur l'orientation
 
 		if (delta_orientation < 5 * EPSILON && delta_orientation > 5 * -EPSILON) {
+
 			this->_statmentTrip++;
 			return ;
+
 		}
 
 		int	delta_power = (int)(((delta_orientation) / EPSILON) * 10);
@@ -203,14 +98,31 @@ void	AquabotNode::_targetStanCallback() {
 			this->_statmentTrip = 0;
 			return ;
 
+		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 15) {
+
+			if (delta_orientation < 0) {
+
+				setThrusterPos[LEFT] = delta_orientation ;
+				setThrusterPos[RIGHT] = (delta_orientation) * -0.1;
+				Thrust[LEFT] = 1800;
+				Thrust[RIGHT] = 2000;
+
+			} else {
+
+				setThrusterPos[LEFT] = (delta_orientation) * 0.1;
+				setThrusterPos[RIGHT] = delta_orientation;
+				Thrust[LEFT] = 2000;
+				Thrust[RIGHT] = 1800;
+
+
+			}
+			this->_setThrusterPos(setThrusterPos);
+			this->_setThrusterThrust(Thrust);
+			return ;
+
 		}
 
-		if (distance < 12) {
-
-			setThrusterPos[LEFT] = 0;
-			setThrusterPos[RIGHT] = 0;
-
-		} else if (delta_orientation < 0) {
+		if (delta_orientation < 0) {
 
 			setThrusterPos[LEFT] = 0 ;
 			setThrusterPos[RIGHT] = (delta_orientation) * -0.01;
@@ -227,14 +139,41 @@ void	AquabotNode::_targetStanCallback() {
 		Thrust[RIGHT] = 5000;
 		this->_setThrusterThrust(Thrust);
 
-	} else if (this->_statmentTrip == 2) { // troisieme fase -> arriver a moin de 15 metre
+	} else if (this->_statmentTrip == 2) { // troisieme fase -> frein
+
+		if (distance < 5) {
+
+			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 1) {
+
+				this->_statmentTrip++;
+				return ;
+
+			}
+
+			Thrust[LEFT] = -5000;
+			Thrust[RIGHT] = -5000;
+			this->_setThrusterThrust(Thrust);
+
+		} else {
+
+			setThrusterPos[LEFT] = 0;
+			setThrusterPos[RIGHT] = 0;
+			this->_setThrusterPos(setThrusterPos);
+
+			Thrust[LEFT] = -5000;
+			Thrust[RIGHT] = -5000;
+			this->_setThrusterThrust(Thrust);
+
+		}
+
+	} else if (this->_statmentTrip == 3) { // quatrieme fase -> goto point petite vitesse
 
 		if (distance < 2) {
 
 			this->_statmentTrip++;
 			return ;
 
-		} else if (distance < 5) {
+		} else {
 
 			setThrusterPos[LEFT] = delta_orientation;
 			setThrusterPos[RIGHT] = delta_orientation;
@@ -244,19 +183,16 @@ void	AquabotNode::_targetStanCallback() {
 			Thrust[RIGHT] = (int)(30  * distance * 0.1);
 			this->_setThrusterThrust(Thrust);
 
-		} else {
-
-			setThrusterPos[LEFT] = 0;
-			setThrusterPos[RIGHT] = 0;
-			this->_setThrusterPos(setThrusterPos);
-
-			Thrust[LEFT] = (int)(-5000 * distance * 0.01);
-			Thrust[RIGHT] = (int)(-5000 * distance * 0.01);
-			this->_setThrusterThrust(Thrust);
-
 		}
+	} else if (this->_statmentTrip == 4) { // cinquieme fase -> stab sur site
 
-	} else if (this->_statmentTrip == 3) { // quatrieme fase -> stab sur le point
+		setThrusterPos[LEFT] = 0;
+		setThrusterPos[RIGHT] = 0;
+		this->_setThrusterPos(setThrusterPos);
+
+		Thrust[LEFT] = 0;
+		Thrust[RIGHT] = 0;
+		this->_setThrusterThrust(Thrust);
 
 		RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
 		this->_statmentTrip++;
