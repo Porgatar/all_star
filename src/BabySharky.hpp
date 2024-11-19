@@ -20,6 +20,8 @@ using namespace std::chrono_literals;
 
 #define X                     0
 #define Y                     1
+#define Z                     2
+#define W                     3
 #define LEFT                  0
 #define RIGHT                 1
 #define RANGE                 0
@@ -58,7 +60,7 @@ class AquabotNode : public rclcpp::Node {
 
     //  - - - - - Commands Getters  - - - - - //
     void  _getGpsData(double [2]);
-    void  _getImuData(double [2], double &, double &);
+    void  _getImuData(double [2], double [3], double [3]);
     void  _getCriticalWindTurbinData(double [2]);
     void  _getImageData(cv::Mat &);
 
@@ -72,13 +74,9 @@ class AquabotNode : public rclcpp::Node {
     double  _targetGpsPos[2];
 
     double  _acceleration[2];
-    double  _targetAcceleration[2];
-
-    double  _angularVelocity;
-    double  _targetAngularVelocity;
-
-    double  _orientation;
-    double  _targetOrientation;
+    double  _angularVelocity[3];
+    double  _orientation[4]; // on purpose^^
+    double  _targetOrientation[3];
 
     double  _criticalWindTurbin[2];
 
