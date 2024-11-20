@@ -80,13 +80,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     );
 
     // callback loops
-    this->_imageProcessorCallbackTimer = this->create_wall_timer(16ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
-
-    // // test
-    // double  pos[2] = {-EPSILON * 5, -EPSILON * 5};
-    // int     thrust[2] = {-50, -50};
-    // this->_setThrusterPos(pos);
-    // this->_setThrusterThrust(thrust);
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(32ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
 }
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
@@ -176,7 +170,6 @@ void    AquabotNode::_imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr msg
 
     std::lock_guard<std::mutex> lock(this->_imuMutex);
 
-    // rework needed
     this->_acceleration[X] = msg->linear_acceleration.x;
     this->_acceleration[Y] = msg->linear_acceleration.y;
     this->_angularVelocity[X] = msg->angular_velocity.x;
@@ -205,7 +198,7 @@ void    AquabotNode::_imageDataCallback(const sensor_msgs::msg::Image::SharedPtr
 
     std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
 
-    this->_lastFrame = cv_bridge::toCvCopy(msg, "bgr8")->image; // need of opti
+    this->_lastFrame = cv_bridge::toCvCopy(msg, "bgr8")->image;
 }
 
 //  -   -   -   -   -   Sensors Getters  -   -   -   -   -   //
@@ -227,7 +220,7 @@ void    AquabotNode::_getImuData(double acceleration[2], double angularVelocity[
     double                      rz = this->_orientation[Z];
     double                      rw = this->_orientation[W];
 
-    if (acceleration) { // rework needed
+    if (acceleration) { // not actual speed
 
         acceleration[X] = this->_acceleration[X];
         acceleration[Y] = this->_acceleration[Y];
@@ -259,6 +252,22 @@ void    AquabotNode::_getImageData(cv::Mat &frame) {
     std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
 
     frame = this->_lastFrame.clone();
+}
+
+void    AquabotNode::_getAvoidanceOrientation(double & angle) {
+
+    std::lock_guard<std::mutex> lock(this->_avoidanceOrientationMutex);
+
+    angle = this->_avoidanceOrientation;
+}
+
+//  -   -   -   -   -   Sensors Setters  -   -   -   -   -   //
+
+void    AquabotNode::_setAvoidanceOrientation(const double & angle) {
+
+    std::lock_guard<std::mutex> lock(this->_avoidanceOrientationMutex);
+
+    this->_avoidanceOrientation = angle;
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //

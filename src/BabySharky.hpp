@@ -63,6 +63,10 @@ class AquabotNode : public rclcpp::Node {
     void  _getImuData(double [2], double [3], double [3]);
     void  _getCriticalWindTurbinData(double [2]);
     void  _getImageData(cv::Mat &);
+    void  _getAvoidanceOrientation(double &);
+
+    //  - - - - - Commands Setters  - - - - - //
+    void  _setAvoidanceOrientation(const double &);
 
     //  - - - - - Commands Utils  - - - - - //
     void  _degToMeter(double [2]);
@@ -77,6 +81,7 @@ class AquabotNode : public rclcpp::Node {
     double  _angularVelocity[3];
     double  _orientation[4]; // on purpose^^
     double  _targetOrientation[3];
+    double  _avoidanceOrientation;
 
     double  _criticalWindTurbin[2];
 
@@ -108,4 +113,5 @@ class AquabotNode : public rclcpp::Node {
     std::mutex  _gpsOriginMutex;
     std::mutex  _imuMutex;
     std::mutex  _criticalWindTurbinMutex;
+    std::mutex  _avoidanceOrientationMutex;
 };
