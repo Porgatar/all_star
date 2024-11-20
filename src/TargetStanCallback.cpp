@@ -14,16 +14,16 @@ void	AquabotNode::_targetStanCallback() {
 	double	gpsPos[2];
 	double	targetGpsPos[2] = {70, -60}; // target
  // --------IMU_DATA-------- //
-	double	orientation;
+	double	orientation[3];
 	double	acceleration[2];
-	double	angularVelocity;
+	double	angularVelocity[3];
  // --------GETTEUR--------- //-
 	this->_getGpsData(gpsPos);
 	this->_getImuData(acceleration, angularVelocity, orientation);
  // --------UTILS_VAR------- //
 	double	distance =  dist(gpsPos[0], gpsPos[1], targetGpsPos[0], targetGpsPos[1]);
 	double	orientationTarget = atan2(targetGpsPos[1] - gpsPos[1], targetGpsPos[0] - gpsPos[0]);
-	double	delta_orientation = -1 * (orientationTarget - orientation);
+	double	delta_orientation = -1 * (orientationTarget - orientation[Z]);
  // --------PRINTEUR-------- //
 	// if (this->_statmentTrip < 3)
 		RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
