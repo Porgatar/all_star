@@ -68,7 +68,6 @@ void	AquabotNode::_targetStanCallback() {
 				setThrusterPos[RIGHT] = delta_orientation;
 
 				Thrust[LEFT] = (int)(delta_power * -0.3);
-				// Thrust[LEFT] = 0;
 				Thrust[RIGHT] = delta_power * -1;
 
 			} else {
@@ -78,7 +77,6 @@ void	AquabotNode::_targetStanCallback() {
 
 				Thrust[LEFT] = delta_power;
 				Thrust[RIGHT] = (int)(delta_power * 0.3);
-				// Thrust[RIGHT] = 0;
 
 			}
 
@@ -88,7 +86,7 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 1) { // seconde fase -> deplacment sur site
 
-		if (distance < 6)	{
+		if (distance < 16)	{
 			this->_statmentTrip++;
 			return ;
 		}
@@ -98,7 +96,7 @@ void	AquabotNode::_targetStanCallback() {
 			this->_statmentTrip = 0;
 			return ;
 
-		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 15) {
+		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 25) {
 
 			if (delta_orientation < 0) {
 
@@ -141,9 +139,9 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 2) { // troisieme fase -> frein
 
-		if (distance < 5) {
+		if (distance < 15) {
 
-			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 1) {
+			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 0.6) {
 
 				this->_statmentTrip++;
 				return ;
@@ -168,34 +166,46 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 3) { // quatrieme fase -> goto point petite vitesse
 
-		if (distance < 2) {
+		if (distance < 12) {
 
 			this->_statmentTrip++;
 			return ;
 
 		} else {
 
-			setThrusterPos[LEFT] = delta_orientation;
-			setThrusterPos[RIGHT] = delta_orientation;
-			this->_setThrusterPos(setThrusterPos);
-
 			Thrust[LEFT] = (int)(30 * distance * 0.1);
 			Thrust[RIGHT] = (int)(30  * distance * 0.1);
 			this->_setThrusterThrust(Thrust);
 
+			setThrusterPos[LEFT] = delta_orientation;
+			setThrusterPos[RIGHT] = delta_orientation;
+			this->_setThrusterPos(setThrusterPos);
+
 		}
 	} else if (this->_statmentTrip == 4) { // cinquieme fase -> stab sur site
 
-		setThrusterPos[LEFT] = 0;
-		setThrusterPos[RIGHT] = 0;
+		setThrusterPos[LEFT] = 45 * -EPSILON ;
+		setThrusterPos[RIGHT] = 45 * EPSILON;
 		this->_setThrusterPos(setThrusterPos);
 
-		Thrust[LEFT] = 0;
-		Thrust[RIGHT] = 0;
+		int	counter_push = (int)(2500 * (distance - 10));
+		if (abs(distance - 10) < 0.5)
+			counter_push = (int)(counter_push * 0.1);
+		if (delta_orientation < 0) {
+
+			Thrust[LEFT] = (int)(counter_push * 0.7);
+			Thrust[RIGHT] = counter_push;
+
+		} else {
+
+			Thrust[LEFT] = counter_push;
+			Thrust[RIGHT] = (int)(counter_push * 0.7);
+
+		}
 		this->_setThrusterThrust(Thrust);
 
-		RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
-		this->_statmentTrip++;
+		// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
+		// this->_statmentTrip++;
 
 	}
 }
