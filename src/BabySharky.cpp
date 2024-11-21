@@ -30,7 +30,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_criticalWindTurbin[RANGE] = 0;
     this->_criticalWindTurbin[BEARING] = 0;
 
-    this->_statmentTrip = 0;
+    this->_statementTrip = 0;
     this->_lastFrame = 0;
 
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //

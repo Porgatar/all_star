@@ -70,8 +70,8 @@ void    AquabotNode::_imageProcessorCallback() {
 
                 double result = deviation[deviation[LEFT] > deviation[RIGHT]];
 
-                if (result < EPSILON)
-                    result = 0.0;
+                // if (result < EPSILON)
+                //     result = 0.0;
                 if (result && deviation[LEFT] < deviation[RIGHT])
                     result *= -1;
                 if (result)

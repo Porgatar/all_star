@@ -87,7 +87,7 @@ class AquabotNode : public rclcpp::Node {
 
     double  _criticalWindTurbin[2];
 
-    int _statmentTrip;
+    int _statementTrip;
     cv::Mat _lastFrame;
 
     //  - - - - - Publishers  - - - - - //
