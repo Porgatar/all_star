@@ -22,7 +22,7 @@ pkg_check_modules(ZBAR REQUIRED zbar)
 include_directories(${ZBAR_INCLUDE_DIRS})
 link_directories(${ZBAR_LIBRARY_DIRS})
 
-add_executable(BabySharky src/main.cpp src/BabySharky.cpp src/ImageProcessorCallback.cpp src/TargetStanCallback.cpp)
+add_executable(BabySharky src/main.cpp src/BabySharky.cpp src/ImageProcessorCallback.cpp src/TargetStanCallback.cpp src/MainProcessorCallback.cpp)
 ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces geometry_msgs cv_bridge image_transport OpenCV)
 target_link_libraries(BabySharky ${ZBAR_LIBRARIES})
 target_include_directories(BabySharky PUBLIC

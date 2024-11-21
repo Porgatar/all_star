@@ -99,6 +99,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
     // callback loops
     this->_targetStanCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_targetStanCallback, this));
     this->_imageProcessorCallbackTimer = this->create_wall_timer(64ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
+    this->_mainProcessorCallbackTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_mainProcessorCallback, this));
 }
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
@@ -256,6 +257,14 @@ void    AquabotNode::_getGpsData(double gpsPos[2]) {
     this->_degToMeter(gpsPos);
 }
 
+void    AquabotNode::_getTargetGpsData(double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
+
+    gpsPos[X] = this->_targetGpsPos[X];
+    gpsPos[Y] = this->_targetGpsPos[Y];
+}
+
 void    AquabotNode::_getImuData(double acceleration[2], double angularVelocity[3], double orientation[3]) {
 
     std::lock_guard<std::mutex> lock(this->_imuMutex);
@@ -377,6 +386,14 @@ void    AquabotNode::_setCameraState(const int &state) {
     std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
 
     this->_cameraState = state;
+}
+
+void    AquabotNode::_setTargetGpsData(const double gpsPos[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
+
+    this->_targetGpsPos[X] = gpsPos[X];
+    this->_targetGpsPos[Y] = gpsPos[Y];
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //

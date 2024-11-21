@@ -54,6 +54,7 @@ class AquabotNode : public rclcpp::Node {
     //  - - - - - Commands Loops - - - - - //
     void  _targetStanCallback();
     void  _imageProcessorCallback();
+    void  _mainProcessorCallback();
 
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
@@ -73,6 +74,7 @@ class AquabotNode : public rclcpp::Node {
 
     //  - - - - - Commands Getters  - - - - - //
     void  _getGpsData(double [2]);
+    void  _getTargetGpsData(double [2]);
     void  _getImuData(double [2], double [3], double [3]);
     void  _getImageData(cv::Mat &);
     void  _getAvoidanceTarget(double [2]);
@@ -83,6 +85,7 @@ class AquabotNode : public rclcpp::Node {
     void  _getCameraState(int &);
 
     //  - - - - - Commands Setters  - - - - - //
+    void  _setTargetGpsData(const double [2]);
     void  _setAvoidanceTarget(const double [2]);
     void  _setGlobalState(const int &);
     void  _setTripState(const int &);
@@ -133,6 +136,7 @@ class AquabotNode : public rclcpp::Node {
     //  - - - - - Loops - - - - - //
     rclcpp::TimerBase::SharedPtr  _targetStanCallbackTimer;
     rclcpp::TimerBase::SharedPtr  _imageProcessorCallbackTimer;
+    rclcpp::TimerBase::SharedPtr  _mainProcessorCallbackTimer;
 
     //  - - - - - Mutexes  - - - - - //
     std::mutex  _thrusterPosMutex;
@@ -140,6 +144,7 @@ class AquabotNode : public rclcpp::Node {
     std::mutex  _cameraMutex;
     std::mutex  _lastFrameMutex;
     std::mutex  _gpsMutex;
+    std::mutex  _targetGpsMutex;
     std::mutex  _gpsOriginMutex;
     std::mutex  _imuMutex;
     std::mutex  _windTurbinMutex;

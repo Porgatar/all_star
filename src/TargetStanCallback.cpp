@@ -21,6 +21,7 @@ void	AquabotNode::_targetStanCallback() {
 	double	angularVelocity[3];
  // --------GETTEUR--------- //-
 	this->_getGpsData(gpsPos);
+	this->_getTargetGpsData(targetGpsPos);
 	this->_getImuData(acceleration, angularVelocity, orientation);
  // --------UTILS_VAR------- //
 	double	distance =  dist(gpsPos[0], gpsPos[1], targetGpsPos[0], targetGpsPos[1]);
@@ -28,7 +29,7 @@ void	AquabotNode::_targetStanCallback() {
 	double	delta_orientation = -1 * (orientationTarget - orientation[Z]);
  // --------PRINTEUR-------- //
 	// if (this->_statmentTrip < 3)
-		RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
+		// RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
 	// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
 	// RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
 	// RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
