@@ -1,47 +1,56 @@
 #include "BabySharky.hpp"
 
-#define QR_DETECTOR         1
-#define OBSTACLE_DETECTOR   2
 #define MAX_VIEW_DIST       800.0
 #define HORIZON_LINE        255
 #define X_RES               720
 #define X_FOV               1.3962634
 
-// test function
 void    AquabotNode::_imageProcessorCallback() {
 
-    cv::Mat                 frame;
-    cv::Mat                 gray;
+    int cameraState;
 
-    int cameraMode = OBSTACLE_DETECTOR; // placeholder
+    this->_getCameraState(cameraState);
+
+    if (!cameraState)
+        return ;
+
+    cv::Mat frame;
 
     this->_getImageData(frame);
     if (frame.empty())
         return ;
-    if (cameraMode == QR_DETECTOR) {
+    if (cameraState == QR_DETECTOR) {
+
+        std_msgs::msg::String   msg;
+        cv::Mat                 gray;
 
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-        zbar::ImageScanner      scanner;
-        zbar::Image             zbar_image(gray.cols, gray.rows, "Y800", gray.data, gray.total());
+
+        zbar::ImageScanner  scanner;
+        zbar::Image         zbar_image(gray.cols, gray.rows, "Y800", gray.data, gray.total());
 
         scanner.set_config(zbar::ZBAR_NONE, zbar::ZBAR_CFG_ENABLE, 1);
 
         int n = scanner.scan(zbar_image);
 
-        if (n > 0)
-            for (auto symbol = zbar_image.symbol_begin(); symbol != zbar_image.symbol_end(); ++symbol)
-                RCLCPP_INFO(this->get_logger(), "QR Code detected: %s", symbol->get_data().c_str()); // debug
-        else
-            RCLCPP_INFO(this->get_logger(), "No QR Code detected."); // debug
+        if (n > 0) {
+
+            for (auto symbol = zbar_image.symbol_begin(); symbol != zbar_image.symbol_end(); ++symbol) {
+
+                msg.data = symbol->get_data().c_str();
+                this->_windTurbinCheckup->publish(msg);
+                RCLCPP_INFO(this->get_logger(), "QR Code detected: %s", msg.data.c_str()); // debug
+            }
+        }
     }
-    else if (cameraMode == OBSTACLE_DETECTOR) {
+    else if (cameraState == OBSTACLE_DETECTOR) {
 
         cv::Mat                             hsvImage;
         cv::Mat                             grayMask;
         std::vector<std::vector<cv::Point>> contours;
         double                              orientation[3];
         double                              dynamicHorizon;
-        double                              finalResult = 0.0;
+        double                              finalResult[2] = {0.0, 0.0};
         static double                       yFov = 2 * std::atan((static_cast<double>(frame.rows) / frame.cols) * std::tan(X_FOV / 2));
         static double                       yPixelPerRadian = static_cast<double>(frame.rows) / yFov;
         static double                       xRadianPerPixel = X_FOV / frame.cols;
@@ -74,26 +83,27 @@ void    AquabotNode::_imageProcessorCallback() {
                     result = 0.0;
                 if (result && deviation[LEFT] < deviation[RIGHT])
                     result *= -1;
-                if (result)
-                    finalResult = result;
-
-                // debug
-                cv::drawContours(frame, std::vector<std::vector<cv::Point>>{contour}, -1, cv::Scalar(0, 255, 0), 2);
                 if (result) {
 
+                    finalResult[RANGE] = result;
+                    finalResult[BEARING] = distance;
+                }
+
+                // debug
+                if (result) {
+
+                    cv::drawContours(frame, std::vector<std::vector<cv::Point>>{contour}, -1, cv::Scalar(0, 255, 0), 2);
                     cv::putText(frame, std::to_string(distance) + "m", cv::Point(boundingBox.x + boundingBox.width / 2, yBoxMin + 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1); // debug
                     cv::putText(frame, std::to_string(result) + "rad", cv::Point(boundingBox.x + boundingBox.width / 2, yBoxMin + 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1); // debug
                 }
             }
         }
-        this->_setAvoidanceOrientation(finalResult);
-        // debug
-        cv::line(frame, cv::Point(0, static_cast<int>(dynamicHorizon)), cv::Point(frame.cols, static_cast<int>(dynamicHorizon)), cv::Scalar(0, 0, 255), 1);
-        cv::putText(frame, "Horizon line", cv::Point(10, static_cast<int>(dynamicHorizon) - 10), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 255), 1);
+        this->_setAvoidanceTarget(finalResult);
     }
+
     // debug image topic
-    auto        msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
     static auto publisher = this->create_publisher<sensor_msgs::msg::Image>("/test", rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable));
+    auto        msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
 
     publisher->publish(*msg);
 }

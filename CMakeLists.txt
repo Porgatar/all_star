@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ros_gz_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
@@ -22,7 +23,7 @@ include_directories(${ZBAR_INCLUDE_DIRS})
 link_directories(${ZBAR_LIBRARY_DIRS})
 
 add_executable(BabySharky src/main.cpp src/BabySharky.cpp src/ImageProcessorCallback.cpp src/TargetStanCallback.cpp)
-ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces cv_bridge image_transport OpenCV)
+ament_target_dependencies(BabySharky rclcpp std_msgs sensor_msgs ros_gz_interfaces geometry_msgs cv_bridge image_transport OpenCV)
 target_link_libraries(BabySharky ${ZBAR_LIBRARIES})
 target_include_directories(BabySharky PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

@@ -7,6 +7,8 @@ static double	dist(double ax, double ay, double bx, double by)
 
 void	AquabotNode::_targetStanCallback() {
 
+ // --------STATE----------- //
+	std::lock_guard<std::mutex> lock(this->_tripStateMutex);
  // --------THRUST---------- //
 	int		Thrust[2];
 	double	setThrusterPos[2];

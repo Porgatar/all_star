@@ -23,14 +23,14 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_orientation[Y] = 0;
     this->_orientation[Z] = 0;
     this->_orientation[W] = 0;
-    this->_targetOrientation[X] = 0;
-    this->_targetOrientation[Y] = 0;
-    this->_targetOrientation[Z] = 0;
 
     this->_criticalWindTurbin[RANGE] = 0;
     this->_criticalWindTurbin[BEARING] = 0;
 
+    this->_globalState = 0;
     this->_statmentTrip = 0;
+    this->_cameraState = 0;
+
     this->_lastFrame = 0;
 
     //    -   -   -   -   -   Publishers    -   -   -   -   -   //
@@ -58,6 +58,12 @@ AquabotNode::AquabotNode() : Node("all_star") {
         rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable)
     );
 
+    // Camera
+    this->_windTurbinCheckup = this->create_publisher<std_msgs::msg::String> \
+        ("/vrx/windturbinesinspection/windturbine_checkup", \
+        rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable)
+    );
+
     //    -   -   -   -   -   Subscription    -   -   -   -   -   //
     this->_gpsSub = this->create_subscription<sensor_msgs::msg::NavSatFix> \
         ("/aquabot/sensors/gps/gps/fix", \
@@ -69,20 +75,30 @@ AquabotNode::AquabotNode() : Node("all_star") {
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_imuDataCallback, this, std::placeholders::_1)
     );
-    this->_criticalWindTurbinSub = this->create_subscription<ros_gz_interfaces::msg::ParamVec> \
-        ("/aquabot/sensors/acoustics/receiver/range_bearing", \
-        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
-        std::bind(&AquabotNode::_criticalWindTurbinDataCallback, this, std::placeholders::_1)
-    );
     this->_imageSub = this->create_subscription<sensor_msgs::msg::Image> \
         ("/aquabot/sensors/cameras/main_camera_sensor/image_raw", \
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
         std::bind(&AquabotNode::_imageDataCallback, this, std::placeholders::_1)
     );
+    this->_windTurbinSub = this->create_subscription<geometry_msgs::msg::PoseArray> \
+        ("/aquabot/ais_sensor/windturbines_positions", \
+        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
+        std::bind(&AquabotNode::_windTurbinDataCallback, this, std::placeholders::_1)
+    );
+    this->_criticalWindTurbinSub = this->create_subscription<ros_gz_interfaces::msg::ParamVec> \
+        ("/aquabot/sensors/acoustics/receiver/range_bearing", \
+        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
+        std::bind(&AquabotNode::_criticalWindTurbinDataCallback, this, std::placeholders::_1)
+    );
+    this->_globalStateSub = this->create_subscription<std_msgs::msg::UInt32> \
+        ("/vrx/windturbinesinspection/current_phase", \
+        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data)), \
+        std::bind(&AquabotNode::_globalStateDataCallback, this, std::placeholders::_1)
+    );
 
     // callback loops
     this->_targetStanCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_targetStanCallback, this));
-    this->_imageProcessorCallbackTimer = this->create_wall_timer(32ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(64ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
 }
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
@@ -183,6 +199,32 @@ void    AquabotNode::_imuDataCallback(const sensor_msgs::msg::Imu::SharedPtr msg
     this->_orientation[W] = msg->orientation.w;
 }
 
+void    AquabotNode::_imageDataCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
+
+    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+
+    this->_lastFrame = cv_bridge::toCvCopy(msg, "bgr8")->image;
+}
+
+void    AquabotNode::_windTurbinDataCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg) {
+
+    std::lock_guard<std::mutex> lock(this->_windTurbinMutex);
+    std::array<double, 7>       data;
+
+    this->_windTurbinGpsPos.clear();
+    for (size_t i = 0; i < msg->poses.size(); i++) {
+
+        data[X] = msg->poses[i].position.x;
+        data[Y] = msg->poses[i].position.y;
+        data[Z] = msg->poses[i].position.z;
+        data[RX] = msg->poses[i].orientation.x;
+        data[RY] = msg->poses[i].orientation.y;
+        data[RZ] = msg->poses[i].orientation.z;
+        data[RW] = msg->poses[i].orientation.w;
+        this->_windTurbinGpsPos.push_back(data);
+    }
+}
+
 void    AquabotNode::_criticalWindTurbinDataCallback(const ros_gz_interfaces::msg::ParamVec::SharedPtr msg) {
 
     std::lock_guard<std::mutex> lock(this->_criticalWindTurbinMutex);
@@ -196,11 +238,11 @@ void    AquabotNode::_criticalWindTurbinDataCallback(const ros_gz_interfaces::ms
     }
 }
 
-void    AquabotNode::_imageDataCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
+void    AquabotNode::_globalStateDataCallback(const std_msgs::msg::UInt32::SharedPtr msg) {
 
-    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+    std::lock_guard<std::mutex> lock(this->_globalStateMutex);
 
-    this->_lastFrame = cv_bridge::toCvCopy(msg, "bgr8")->image;
+    this->_globalState = msg->data;
 }
 
 //  -   -   -   -   -   Sensors Getters  -   -   -   -   -   //
@@ -241,6 +283,42 @@ void    AquabotNode::_getImuData(double acceleration[2], double angularVelocity[
     }
 }
 
+void    AquabotNode::_getImageData(cv::Mat &frame) {
+
+    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+
+    frame = this->_lastFrame.clone();
+}
+
+void    AquabotNode::_getAvoidanceTarget(double target[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_avoidanceTargetMutex);
+
+    target[RANGE] = this->_avoidanceTarget[RANGE];
+    target[BEARING] = this->_avoidanceTarget[BEARING];
+}
+
+void    AquabotNode::_getWindTurbinData(std::list<std::array<double, 3>> &pos) {
+
+    std::lock_guard<std::mutex> lock(this->_windTurbinMutex);
+    std::array<double, 3>       data;
+    double                      degree[2];
+    double                      rx, ry, rz, rw;
+
+    pos.clear();
+    for (const std::array<double, 7> entry : this->_windTurbinGpsPos) {
+
+        rx = entry[RX], ry = entry[RY], rz = entry[RZ], rw = entry[RW];
+        degree[X] = entry[Y]; // it works like this so dont touch it !
+        degree[Y] = entry[X];
+        this->_degToMeter(degree);
+        data[X] = degree[X];
+        data[Y] = degree[Y];
+        data[Z] = atan2(2.0 * (rw * rz + rx * ry), 1.0 - 2.0 * (ry * ry + rz * rz));
+        pos.push_back(data);
+    }
+}
+
 void    AquabotNode::_getCriticalWindTurbinData(double criticalWindTurbin[2]) {
 
     std::lock_guard<std::mutex> lock(this->_criticalWindTurbinMutex);
@@ -249,27 +327,56 @@ void    AquabotNode::_getCriticalWindTurbinData(double criticalWindTurbin[2]) {
     criticalWindTurbin[BEARING] = this->_criticalWindTurbin[BEARING];
 }
 
-void    AquabotNode::_getImageData(cv::Mat &frame) {
+void    AquabotNode::_getGlobalState(int &state) {
 
-    std::lock_guard<std::mutex> lock(this->_lastFrameMutex);
+    std::lock_guard<std::mutex> lock(this->_globalStateMutex);
 
-    frame = this->_lastFrame.clone();
+    state = this->_globalState;
 }
 
-void    AquabotNode::_getAvoidanceOrientation(double & angle) {
+void    AquabotNode::_getTripState(int &state) {
 
-    std::lock_guard<std::mutex> lock(this->_avoidanceOrientationMutex);
+    std::lock_guard<std::mutex> lock(this->_tripStateMutex);
 
-    angle = this->_avoidanceOrientation;
+    state = this->_statmentTrip;
 }
 
-//  -   -   -   -   -   Sensors Setters  -   -   -   -   -   //
+void    AquabotNode::_getCameraState(int &state) {
 
-void    AquabotNode::_setAvoidanceOrientation(const double & angle) {
+    std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
 
-    std::lock_guard<std::mutex> lock(this->_avoidanceOrientationMutex);
+    state = this->_cameraState;
+}
 
-    this->_avoidanceOrientation = angle;
+//  -   -   -   -   -   Setters -   -   -   -   -   //
+
+void    AquabotNode::_setAvoidanceTarget(const double target[2]) {
+
+    std::lock_guard<std::mutex> lock(this->_avoidanceTargetMutex);
+
+    this->_avoidanceTarget[RANGE] = target[RANGE];
+    this->_avoidanceTarget[BEARING] = target[BEARING];
+}
+
+void    AquabotNode::_setGlobalState(const int &state) {
+
+    std::lock_guard<std::mutex> lock(this->_globalStateMutex);
+
+    this->_globalState = state;
+}
+
+void    AquabotNode::_setTripState(const int &state) {
+
+    std::lock_guard<std::mutex> lock(this->_tripStateMutex);
+
+    this->_statmentTrip = state;
+}
+
+void    AquabotNode::_setCameraState(const int &state) {
+
+    std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
+
+    this->_cameraState = state;
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //
