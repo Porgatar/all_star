@@ -8,17 +8,20 @@
 
 void    AquabotNode::_mainProcessorCallback() {
 
-    int GlobalState;
+    int     GlobalState;
+    double  targetPos[2];
+    double  tmpPos[2];
 
     this->_getGlobalState(GlobalState);
     switch (GlobalState) {
 
         case SEARCH: {
 
+            RCLCPP_INFO(this->get_logger(), "SEARCH PHASE !");
+
             static int                          current = 0;
             std::list<std::array<double, 3>>    windTurbines;
             double                              BoatPos[2];
-            double                              tmpPos[2];
             double                              distance;
 
             this->_getGpsData(BoatPos);
@@ -26,25 +29,39 @@ void    AquabotNode::_mainProcessorCallback() {
 
             std::list<std::array<double, 3>>::iterator  it = windTurbines.begin();
             std::advance(it, current);
-            if (windTurbines.size() && it == windTurbines.end())
-                this->_setGlobalState(RALLY);
 
-            distance = std::sqrt(std::pow(BoatPos[X] - (*it)[X], 2) + std::pow(BoatPos[Y] - (*it)[Y], 2));
-            RCLCPP_INFO(this->get_logger(), "distance = %f", distance);
-            if (distance < 15.0) {
+            targetPos[X] = (*it)[X];
+            targetPos[Y] = (*it)[Y];
+            targetPos[X] -= std::cos((*it)[Z]) * 20;
+            targetPos[Y] -= std::sin((*it)[Z]) * 20;
+            distance = std::sqrt(std::pow(BoatPos[X] - targetPos[X], 2) + std::pow(BoatPos[Y] - targetPos[Y], 2));
+            RCLCPP_INFO(this->get_logger(), "distance = %f, rot = %f", distance, (*it)[Z]);
+            if (distance < 25.0) {
 
                 current++;
                 return ;
             }
-            tmpPos[X] = (*it)[X];
-            tmpPos[Y] = (*it)[Y];
-            RCLCPP_INFO(this->get_logger(), "pos = %f, %f", tmpPos[X], tmpPos[Y]);
-            this->_setTargetGpsData(tmpPos);
+            this->_getTargetGpsData(tmpPos);
+            if (tmpPos[X] != targetPos[X] && tmpPos[Y] != targetPos[Y]) {
+
+                RCLCPP_INFO(this->get_logger(), "pos = %f, %f", targetPos[X], targetPos[Y]);
+                this->_setTargetGpsData(targetPos);
+                this->_setTripState(0);
+            }
             break ;
         }
         case RALLY: {
 
-            RCLCPP_INFO(this->get_logger(), "visited all Windturbins !");
+            RCLCPP_INFO(this->get_logger(), "RALLY PHASE !");
+            targetPos[X] = 0;
+            targetPos[Y] = 0;
+            this->_getTargetGpsData(tmpPos);
+            if (tmpPos[X] != targetPos[X] && tmpPos[Y] != targetPos[Y]) {
+
+                RCLCPP_INFO(this->get_logger(), "pos = %f, %f", targetPos[X], targetPos[Y]);
+                this->_setTargetGpsData(targetPos);
+                this->_setTripState(0);
+            }
             break ;
         }
         default:

@@ -14,7 +14,7 @@ void	AquabotNode::_targetStanCallback() {
 	double	setThrusterPos[2];
  // --------GPS------------- //
 	double	gpsPos[2];
-	double	targetGpsPos[2] = {70, -60}; // target
+	double	targetGpsPos[2]; // target
  // --------IMU_DATA-------- //
 	double	orientation[3];
 	double	acceleration[2];
@@ -89,7 +89,7 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 1) { // seconde fase -> deplacment sur site
 
-		if (distance < 16)	{
+		if (distance < 6)	{
 			this->_statmentTrip++;
 			return ;
 		}
@@ -99,7 +99,7 @@ void	AquabotNode::_targetStanCallback() {
 			this->_statmentTrip = 0;
 			return ;
 
-		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 25) {
+		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 15) {
 
 			if (delta_orientation < 0) {
 
@@ -142,7 +142,7 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 2) { // troisieme fase -> frein
 
-		if (distance < 15) {
+		if (distance < 5) {
 
 			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 0.6) {
 
@@ -169,7 +169,7 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statmentTrip == 3) { // quatrieme fase -> goto point petite vitesse
 
-		if (distance < 12) {
+		if (distance < 2) {
 
 			this->_statmentTrip++;
 			return ;
@@ -191,8 +191,8 @@ void	AquabotNode::_targetStanCallback() {
 		setThrusterPos[RIGHT] = 45 * EPSILON;
 		this->_setThrusterPos(setThrusterPos);
 
-		int	counter_push = (int)(2500 * (distance - 10));
-		if (abs(distance - 10) < 0.5)
+		int	counter_push = (int)(2500 * (distance));
+		if (abs(distance) < 0.5)
 			counter_push = (int)(counter_push * 0.1);
 		if (delta_orientation < 0) {
 
