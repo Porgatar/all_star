@@ -82,7 +82,6 @@ class AquabotNode : public rclcpp::Node {
     void  _getCriticalWindTurbinData(double [2]);
     void  _getGlobalState(int &);
     void  _getTripState(int &);
-    void  _getCameraState(int &);
     void  _getTargetOrientation(double &);
     void  _getLastQrCode(std::string &);
 
@@ -91,13 +90,13 @@ class AquabotNode : public rclcpp::Node {
     void  _setAvoidanceTarget(const double [2]);
     void  _setGlobalState(const int &);
     void  _setTripState(const int &);
-    void  _setCameraState(const int &);
     void  _setTargetOrientation(const double &);
     void  _setLastQrCode(const std::string &);
 
     //  - - - - - Commands Utils  - - - - - //
     void  _degToMeter(double [2]);
     void  _meterToDeg(double [2]);
+    void  _setCameraToTarget(void);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsOrigin[2];
@@ -115,7 +114,6 @@ class AquabotNode : public rclcpp::Node {
 
     int _globalState;
     int _statementTrip;
-    int _cameraState;
 
     cv::Mat _lastFrame;
 
@@ -159,5 +157,4 @@ class AquabotNode : public rclcpp::Node {
     std::mutex  _avoidanceTargetMutex;
     std::mutex  _globalStateMutex;
     std::mutex  _tripStateMutex;
-    std::mutex  _cameraStateMutex;
 };

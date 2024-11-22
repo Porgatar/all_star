@@ -31,7 +31,6 @@ AquabotNode::AquabotNode() : Node("all_star") {
 
     this->_globalState = 0;
     this->_statementTrip = -1;
-    this->_cameraState = 0;
 
     this->_lastFrame = 0;
 
@@ -100,7 +99,7 @@ AquabotNode::AquabotNode() : Node("all_star") {
 
     // callback loops
     this->_targetStanCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_targetStanCallback, this));
-    this->_imageProcessorCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(32ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
     this->_mainProcessorCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_mainProcessorCallback, this));
 }
 
@@ -352,13 +351,6 @@ void    AquabotNode::_getTripState(int &state) {
     state = this->_statementTrip;
 }
 
-void    AquabotNode::_getCameraState(int &state) {
-
-    std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
-
-    state = this->_cameraState;
-}
-
 void    AquabotNode::_getTargetOrientation(double & orientation) {
 
     std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
@@ -395,13 +387,6 @@ void    AquabotNode::_setTripState(const int &state) {
     std::lock_guard<std::mutex> lock(this->_tripStateMutex);
 
     this->_statementTrip = state;
-}
-
-void    AquabotNode::_setCameraState(const int &state) {
-
-    std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
-
-    this->_cameraState = state;
 }
 
 void    AquabotNode::_setTargetGpsData(const double gpsPos[2]) {

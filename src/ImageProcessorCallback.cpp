@@ -7,19 +7,12 @@
 
 void    AquabotNode::_imageProcessorCallback() {
 
-    int cameraState;
-
-    this->_getCameraState(cameraState);
-
-    if (!cameraState)
-        return ;
-
     cv::Mat frame;
 
     this->_getImageData(frame);
     if (frame.empty())
         return ;
-    if (cameraState == QR_DETECTOR) {
+    {// if (cameraState == QR_DETECTOR) {
 
         cv::Mat                 gray;
 
@@ -37,24 +30,8 @@ void    AquabotNode::_imageProcessorCallback() {
             for (auto symbol = zbar_image.symbol_begin(); symbol != zbar_image.symbol_end(); ++symbol)
                 this->_setLastQrCode(symbol->get_data());
         }
-        else {
-
-            double  boatPos[2];
-            double  boatOrientation[3];
-            double  targetPos[2];
-            double  targetOrientation;
-
-            this->_getGpsData(boatPos);
-            this->_getTargetGpsData(targetPos);
-            this->_getTargetOrientation(targetOrientation);
-            targetPos[X] += std::cos(targetOrientation) * 15;
-            targetPos[Y] += std::sin(targetOrientation) * 15;
-            this->_getImuData(0, 0, boatOrientation);
-            targetOrientation = atan2(targetPos[Y] - boatPos[Y], targetPos[X] - boatPos[X]) - boatOrientation[Z];
-            this->_setCameraPos(targetOrientation);
-        }
     }
-    else if (cameraState == OBSTACLE_DETECTOR) {
+    {// else if (cameraState == OBSTACLE_DETECTOR) {
 
         this->_setCameraPos(0);
 
