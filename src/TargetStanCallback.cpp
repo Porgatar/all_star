@@ -322,37 +322,78 @@ void	AquabotNode::_targetStanCallback() {
 		// Thrust[RIGHT] = std::max(-300, std::min(Thrust[RIGHT], 300));
 		// this->_setThrusterThrust(Thrust);
 
-		// Fixation des positions des thrusters
-		setThrusterPos[LEFT] = 45 * -EPSILON; // Orientation fixe du moteur gauche
-		setThrusterPos[RIGHT] = 45 * EPSILON; // Orientation fixe du moteur droit
+		if (delta_orientation < 5 * EPSILON && delta_orientation > 5 * -EPSILON) {
+			setThrusterPos[LEFT] = 45 * -EPSILON; // interieur
+			setThrusterPos[RIGHT] = 45 * EPSILON; // exterieur
+
+		}
+		setThrusterPos[LEFT] = 45 * -EPSILON;
+		setThrusterPos[RIGHT] = 45 * EPSILON;
 		this->_setThrusterPos(setThrusterPos);
 
-		// Définition des coefficients pour la modulation dynamique
-		double distance_error = distance - 10; // Erreur de distance (positive si trop loin, négative si trop proche)
-		double distance_correction = std::clamp(abs(distance_error) * 100.0, 500.0, 3000.0); // Correction proportionnelle à l'erreur, bornée
-		double base_power = 1000; // Puissance minimale pour garantir le mouvement
+		if (delta_orientation > 0) {
 
-		// Ajustement des poussées en fonction de la distance et de la direction
-		if (delta_orientation < 0) { // Sens horaire
-			if (distance_error < 0) { // Trop proche de l'éolienne
-				Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
-				Thrust[RIGHT] = (int)-distance_correction;                  // Recule pour augmenter la distance
-			} else { // Trop loin de l'éolienne
-				Thrust[LEFT] = (int)(base_power + distance_correction);       // Augmente la poussée pour rapprocher
-				Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
+			if (distance < 10) {
+				Thrust[LEFT] = 150;
+				Thrust[RIGHT] = (int)(-50 * abs(distance - 10));
+			} else {
+				Thrust[LEFT] = 150;
+				Thrust[RIGHT] = (int)(50 * abs(distance - 10));
 			}
-		} else { // Sens antihoraire
-			if (distance_error < 0) { // Trop proche de l'éolienne
-				Thrust[LEFT] = (int)-distance_correction;                   // Recule pour augmenter la distance
-				Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
-			} else { // Trop loin de l'éolienne
-				Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
-				Thrust[RIGHT] = (int)(base_power + distance_correction);      // Augmente la poussée pour rapprocher
+
+		} else {
+
+			if (distance < 10) {
+				Thrust[LEFT] = (int)(-50 * abs(distance - 10));
+				Thrust[RIGHT] = -10;
+			} else {
+				Thrust[LEFT] = (int)(50 * abs(distance - 10));
+				Thrust[RIGHT] = 10;
 			}
+
 		}
 
-		// Appliquer les poussées aux moteurs
+		Thrust[LEFT] = 40;
+		Thrust[RIGHT] = (int)(300 * (distance - 10));
+
 		this->_setThrusterThrust(Thrust);
+
+
+
+
+
+		// // Fixation des positions des thrusters
+		// setThrusterPos[LEFT] = 45 * -EPSILON; // Orientation fixe du moteur gauche
+		// setThrusterPos[RIGHT] = 45 * EPSILON; // Orientation fixe du moteur droit
+		// this->_setThrusterPos(setThrusterPos);
+
+		// // Définition des coefficients pour la modulation dynamique
+		// double base_power = 1000; // Puissance minimale pour garantir le mouvement
+
+		// // Ajustement des poussées en fonction de la distance et de la direction
+		// if (delta_orientation < 0) { // Sens horaire
+		// 	if (distance < 10.01) { // Trop proche de l'éolienne
+		// 		Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
+		// 		Thrust[RIGHT] = (int)(200 * (distance - 10));                  // Recule pour augmenter la distance
+		// 	} else { // Trop loin de l'éolienne
+		// 		Thrust[LEFT] = (int)(base_power * (distance - 10));       // Augmente la poussée pour rapprocher
+		// 		Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
+		// 	}
+		// } else { // Sens antihoraire
+		// 	if (distance < 10.01) { // Trop proche de l'éolienne
+		// 		Thrust[LEFT] = (int)(200 * (distance - 10));;                   // Recule pour augmenter la distance
+		// 		Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
+		// 	} else { // Trop loin de l'éolienne
+		// 		Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
+		// 		Thrust[RIGHT] = (int)(base_power * (distance - 10));      // Augmente la poussée pour rapprocher
+		// 	}
+		// }
+		// // Appliquer les poussées aux moteurs
+		// this->_setThrusterThrust(Thrust);
+
+
+
+
 
 
 	}
