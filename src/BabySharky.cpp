@@ -24,11 +24,13 @@ AquabotNode::AquabotNode() : Node("all_star") {
     this->_orientation[Z] = 0;
     this->_orientation[W] = 0;
 
+    this->_targetOrientation = 0;
+
     this->_criticalWindTurbin[RANGE] = 0;
     this->_criticalWindTurbin[BEARING] = 0;
 
     this->_globalState = 0;
-    this->_statmentTrip = 0;
+    this->_statementTrip = -1;
     this->_cameraState = 0;
 
     this->_lastFrame = 0;
@@ -347,7 +349,7 @@ void    AquabotNode::_getTripState(int &state) {
 
     std::lock_guard<std::mutex> lock(this->_tripStateMutex);
 
-    state = this->_statmentTrip;
+    state = this->_statementTrip;
 }
 
 void    AquabotNode::_getCameraState(int &state) {
@@ -355,6 +357,13 @@ void    AquabotNode::_getCameraState(int &state) {
     std::lock_guard<std::mutex> lock(this->_cameraStateMutex);
 
     state = this->_cameraState;
+}
+
+void    AquabotNode::_getTargetOrientation(double & orientation) {
+
+    std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
+
+    orientation = this->_targetOrientation;
 }
 
 //  -   -   -   -   -   Setters -   -   -   -   -   //
@@ -378,7 +387,7 @@ void    AquabotNode::_setTripState(const int &state) {
 
     std::lock_guard<std::mutex> lock(this->_tripStateMutex);
 
-    this->_statmentTrip = state;
+    this->_statementTrip = state;
 }
 
 void    AquabotNode::_setCameraState(const int &state) {
@@ -394,6 +403,13 @@ void    AquabotNode::_setTargetGpsData(const double gpsPos[2]) {
 
     this->_targetGpsPos[X] = gpsPos[X];
     this->_targetGpsPos[Y] = gpsPos[Y];
+}
+
+void    AquabotNode::_setTargetOrientation(const double & orientation) {
+
+    std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
+
+    this->_targetOrientation = orientation;
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //

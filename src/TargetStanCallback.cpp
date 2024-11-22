@@ -19,7 +19,7 @@ void	AquabotNode::_targetStanCallback() {
 	double	orientation[3];
 	double	acceleration[2];
 	double	angularVelocity[3];
- // --------GETTEUR--------- //-
+ // --------GETTEUR--------- //
 	this->_getGpsData(gpsPos);
 	this->_getTargetGpsData(targetGpsPos);
 	this->_getImuData(acceleration, angularVelocity, orientation);
@@ -28,19 +28,18 @@ void	AquabotNode::_targetStanCallback() {
 	double	orientationTarget = atan2(targetGpsPos[1] - gpsPos[1], targetGpsPos[0] - gpsPos[0]);
 	double	delta_orientation = -1 * (orientationTarget - orientation[Z]);
  // --------PRINTEUR-------- //
-	// if (this->_statmentTrip < 3)
-		// RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statmentTrip);
+	// if (this->_statementTrip < 3)
+		// RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statementTrip);
 	// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
 	// RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
 	// RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
 	// RCLCPP_INFO(this->get_logger(), "targer_o = %f o = %f resultat = %f", orientationTarget, orientation, orientationTarget - orientation);
 
+	if (this->_statementTrip == 0) { // premiere fase du trajet -> stab sur l'orientation
 
-	if (this->_statmentTrip == 0) { // premiere fase du trajet -> stab sur l'orientation
+		if (delta_orientation <  5 * EPSILON && delta_orientation > 5 * -EPSILON) {
 
-		if (delta_orientation < 5 * EPSILON && delta_orientation > 5 * -EPSILON) {
-
-			this->_statmentTrip++;
+			this->_statementTrip++;
 			return ;
 
 		}
@@ -70,7 +69,7 @@ void	AquabotNode::_targetStanCallback() {
 				setThrusterPos[LEFT] = delta_orientation * -1;
 				setThrusterPos[RIGHT] = delta_orientation;
 
-				Thrust[LEFT] = (int)(delta_power * -0.3);
+				Thrust[LEFT] = (int)(delta_power * -0.3 * abs(angularVelocity[Z]));
 				Thrust[RIGHT] = delta_power * -1;
 
 			} else {
@@ -79,7 +78,7 @@ void	AquabotNode::_targetStanCallback() {
 				setThrusterPos[RIGHT] = delta_orientation * -1;
 
 				Thrust[LEFT] = delta_power;
-				Thrust[RIGHT] = (int)(delta_power * 0.3);
+				Thrust[RIGHT] = (int)(delta_power * 0.3 * abs(angularVelocity[Z]));
 
 			}
 
@@ -87,16 +86,16 @@ void	AquabotNode::_targetStanCallback() {
 		this->_setThrusterPos(setThrusterPos);
 		this->_setThrusterThrust(Thrust);
 
-	} else if (this->_statmentTrip == 1) { // seconde fase -> deplacment sur site
+	} else if (this->_statementTrip == 1) { // seconde fase -> deplacment sur site
 
 		if (distance < 6)	{
-			this->_statmentTrip++;
+			this->_statementTrip++;
 			return ;
 		}
 
 		if (delta_orientation > 10 * EPSILON || delta_orientation < 10 * -EPSILON) {
 
-			this->_statmentTrip = 0;
+			this->_statementTrip = 0;
 			return ;
 
 		} else if (delta_orientation > 2 * EPSILON || delta_orientation < 2 * -EPSILON || distance < 15) {
@@ -105,7 +104,7 @@ void	AquabotNode::_targetStanCallback() {
 
 				setThrusterPos[LEFT] = delta_orientation ;
 				setThrusterPos[RIGHT] = (delta_orientation) * -0.1;
-				Thrust[LEFT] = 1800;
+				Thrust[LEFT] = 1900;
 				Thrust[RIGHT] = 2000;
 
 			} else {
@@ -113,7 +112,7 @@ void	AquabotNode::_targetStanCallback() {
 				setThrusterPos[LEFT] = (delta_orientation) * 0.1;
 				setThrusterPos[RIGHT] = delta_orientation;
 				Thrust[LEFT] = 2000;
-				Thrust[RIGHT] = 1800;
+				Thrust[RIGHT] = 1900;
 
 
 			}
@@ -140,13 +139,13 @@ void	AquabotNode::_targetStanCallback() {
 		Thrust[RIGHT] = 5000;
 		this->_setThrusterThrust(Thrust);
 
-	} else if (this->_statmentTrip == 2) { // troisieme fase -> frein
+	} else if (this->_statementTrip == 2) { // troisieme fase -> frein
 
 		if (distance < 5) {
 
 			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 0.6) {
 
-				this->_statmentTrip++;
+				this->_statementTrip++;
 				return ;
 
 			}
@@ -167,17 +166,17 @@ void	AquabotNode::_targetStanCallback() {
 
 		}
 
-	} else if (this->_statmentTrip == 3) { // quatrieme fase -> goto point petite vitesse
+	} else if (this->_statementTrip == 3) { // quatrieme fase -> goto point petite vitesse
 
 		if (distance < 2) {
 
-			this->_statmentTrip++;
+			this->_statementTrip++;
 			return ;
 
 		} else {
 
-			Thrust[LEFT] = (int)(30 * distance * 0.1);
-			Thrust[RIGHT] = (int)(30  * distance * 0.1);
+			Thrust[LEFT] = (int)(30 * (distance)* 0.1);
+			Thrust[RIGHT] = (int)(30  * (distance)* 0.1);
 			this->_setThrusterThrust(Thrust);
 
 			setThrusterPos[LEFT] = delta_orientation;
@@ -185,30 +184,31 @@ void	AquabotNode::_targetStanCallback() {
 			this->_setThrusterPos(setThrusterPos);
 
 		}
-	} else if (this->_statmentTrip == 4) { // cinquieme fase -> stab sur site
+	} else if (this->_statementTrip == 4) { // cinquieme fase -> stab sur site
 
-		setThrusterPos[LEFT] = 45 * -EPSILON ;
-		setThrusterPos[RIGHT] = 45 * EPSILON;
-		this->_setThrusterPos(setThrusterPos);
+		this->_getTargetOrientation(orientationTarget);
+		delta_orientation = -1 * (orientationTarget - orientation[Z]);
+		RCLCPP_INFO(this->get_logger(), "orientation = %f", delta_orientation);
+		if (distance < -0.01) {
 
-		int	counter_push = (int)(2500 * (distance));
-		if (abs(distance) < 0.5)
-			counter_push = (int)(counter_push * 0.1);
-		if (delta_orientation < 0) {
+			setThrusterPos[LEFT] = delta_orientation * -1;
+			setThrusterPos[RIGHT] = delta_orientation * -1;
 
-			Thrust[LEFT] = (int)(counter_push * 0.7);
-			Thrust[RIGHT] = counter_push;
+			Thrust[LEFT] = (int)(-300 * abs(distance));
+			Thrust[RIGHT] = (int)(-300 * abs(distance));
 
-		} else {
+		} else if (distance > 0.01) {
 
-			Thrust[LEFT] = counter_push;
-			Thrust[RIGHT] = (int)(counter_push * 0.7);
+			setThrusterPos[LEFT] = delta_orientation;
+			setThrusterPos[RIGHT] = delta_orientation;
+
+			Thrust[LEFT] = (int)(300 * (distance));
+			Thrust[RIGHT] = (int)(300 * (distance));
 
 		}
-		this->_setThrusterThrust(Thrust);
 
-		// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
-		// this->_statmentTrip++;
+		this->_setThrusterPos(setThrusterPos);
+		this->_setThrusterThrust(Thrust);
 
 	}
 }

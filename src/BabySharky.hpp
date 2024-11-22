@@ -83,6 +83,7 @@ class AquabotNode : public rclcpp::Node {
     void  _getGlobalState(int &);
     void  _getTripState(int &);
     void  _getCameraState(int &);
+    void  _getTargetOrientation(double &);
 
     //  - - - - - Commands Setters  - - - - - //
     void  _setTargetGpsData(const double [2]);
@@ -90,6 +91,7 @@ class AquabotNode : public rclcpp::Node {
     void  _setGlobalState(const int &);
     void  _setTripState(const int &);
     void  _setCameraState(const int &);
+    void  _setTargetOrientation(const double &);
 
     //  - - - - - Commands Utils  - - - - - //
     void  _degToMeter(double [2]);
@@ -103,13 +105,14 @@ class AquabotNode : public rclcpp::Node {
     double  _acceleration[2];
     double  _angularVelocity[3];
     double  _orientation[4]; // on purpose^^
+    double  _targetOrientation;
     double  _avoidanceTarget[2];
 
     std::list<std::array<double, 7>>  _windTurbinGpsPos;
     double                            _criticalWindTurbin[2];
 
     int _globalState;
-    int _statmentTrip;
+    int _statementTrip;
     int _cameraState;
 
     cv::Mat _lastFrame;
