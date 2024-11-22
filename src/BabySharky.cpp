@@ -100,8 +100,8 @@ AquabotNode::AquabotNode() : Node("all_star") {
 
     // callback loops
     this->_targetStanCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_targetStanCallback, this));
-    this->_imageProcessorCallbackTimer = this->create_wall_timer(64ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
-    this->_mainProcessorCallbackTimer = this->create_wall_timer(1s, std::bind(&AquabotNode::_mainProcessorCallback, this));
+    this->_imageProcessorCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_imageProcessorCallback, this));
+    this->_mainProcessorCallbackTimer = this->create_wall_timer(1ms, std::bind(&AquabotNode::_mainProcessorCallback, this));
 }
 
 //  -   -   -   -   -   Thrusters Publisher   -   -   -   -   -   //
@@ -366,6 +366,13 @@ void    AquabotNode::_getTargetOrientation(double & orientation) {
     orientation = this->_targetOrientation;
 }
 
+void    AquabotNode::_getLastQrCode(std::string &code) {
+
+    std::lock_guard<std::mutex> lock(this->_cameraMutex);
+
+    code = this->_lastQrCode;
+}
+
 //  -   -   -   -   -   Setters -   -   -   -   -   //
 
 void    AquabotNode::_setAvoidanceTarget(const double target[2]) {
@@ -410,6 +417,13 @@ void    AquabotNode::_setTargetOrientation(const double & orientation) {
     std::lock_guard<std::mutex> lock(this->_targetGpsMutex);
 
     this->_targetOrientation = orientation;
+}
+
+void    AquabotNode::_setLastQrCode(const std::string &code) {
+
+    std::lock_guard<std::mutex> lock(this->_cameraMutex);
+
+    this->_lastQrCode = code;
 }
 
 //  -   -   -   -   -   utils  -   -   -   -   -   //

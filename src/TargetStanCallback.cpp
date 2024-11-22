@@ -141,7 +141,7 @@ void	AquabotNode::_targetStanCallback() {
 
 	} else if (this->_statementTrip == 2) { // troisieme fase -> frein
 
-		if (distance < 5) {
+		if (distance < 5.9) {
 
 			if (((abs(acceleration[0]) + abs(acceleration[1])) * 0.5) < 0.6) {
 
@@ -170,7 +170,7 @@ void	AquabotNode::_targetStanCallback() {
 
 		if (distance < 2) {
 
-			this->_statementTrip++;
+			this->_statementTrip = 5;
 			return ;
 
 		} else {
@@ -186,27 +186,33 @@ void	AquabotNode::_targetStanCallback() {
 		}
 	} else if (this->_statementTrip == 4) { // cinquieme fase -> stab sur site
 
-		this->_getTargetOrientation(orientationTarget);
-		delta_orientation = -1 * (orientationTarget - orientation[Z]);
-		RCLCPP_INFO(this->get_logger(), "orientation = %f", delta_orientation);
-		if (distance < -0.01) {
+		if (distance < 9.99) {
 
 			setThrusterPos[LEFT] = delta_orientation * -1;
 			setThrusterPos[RIGHT] = delta_orientation * -1;
 
-			Thrust[LEFT] = (int)(-300 * abs(distance));
-			Thrust[RIGHT] = (int)(-300 * abs(distance));
+			Thrust[LEFT] = (int)(-300 * abs(distance - 10));
+			Thrust[RIGHT] = (int)(-300 * abs(distance - 10));
 
-		} else if (distance > 0.01) {
+		} else if (distance > 10.01) {
 
 			setThrusterPos[LEFT] = delta_orientation;
 			setThrusterPos[RIGHT] = delta_orientation;
 
-			Thrust[LEFT] = (int)(300 * (distance));
-			Thrust[RIGHT] = (int)(300 * (distance));
+			Thrust[LEFT] = (int)(300 * (distance - 10));
+			Thrust[RIGHT] = (int)(300 * (distance - 10));
 
 		}
 
+		this->_setThrusterPos(setThrusterPos);
+		this->_setThrusterThrust(Thrust);
+
+	} else if (this->_statementTrip == 5) { // standby
+
+		setThrusterPos[LEFT] = 0;
+		setThrusterPos[RIGHT] = 0;
+		Thrust[LEFT] = 0;
+		Thrust[RIGHT] = 0;
 		this->_setThrusterPos(setThrusterPos);
 		this->_setThrusterThrust(Thrust);
 

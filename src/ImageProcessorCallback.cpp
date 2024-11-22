@@ -21,7 +21,6 @@ void    AquabotNode::_imageProcessorCallback() {
         return ;
     if (cameraState == QR_DETECTOR) {
 
-        std_msgs::msg::String   msg;
         cv::Mat                 gray;
 
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
@@ -35,15 +34,29 @@ void    AquabotNode::_imageProcessorCallback() {
 
         if (n > 0) {
 
-            for (auto symbol = zbar_image.symbol_begin(); symbol != zbar_image.symbol_end(); ++symbol) {
+            for (auto symbol = zbar_image.symbol_begin(); symbol != zbar_image.symbol_end(); ++symbol)
+                this->_setLastQrCode(symbol->get_data());
+        }
+        else {
 
-                msg.data = symbol->get_data().c_str();
-                this->_windTurbinCheckup->publish(msg);
-                RCLCPP_INFO(this->get_logger(), "QR Code detected: %s", msg.data.c_str()); // debug
-            }
+            double  boatPos[2];
+            double  boatOrientation[3];
+            double  targetPos[2];
+            double  targetOrientation;
+
+            this->_getGpsData(boatPos);
+            this->_getTargetGpsData(targetPos);
+            this->_getTargetOrientation(targetOrientation);
+            targetPos[X] += std::cos(targetOrientation) * 15;
+            targetPos[Y] += std::sin(targetOrientation) * 15;
+            this->_getImuData(0, 0, boatOrientation);
+            targetOrientation = atan2(targetPos[Y] - boatPos[Y], targetPos[X] - boatPos[X]) - boatOrientation[Z];
+            this->_setCameraPos(targetOrientation);
         }
     }
     else if (cameraState == OBSTACLE_DETECTOR) {
+
+        this->_setCameraPos(0);
 
         cv::Mat                             hsvImage;
         cv::Mat                             grayMask;
@@ -69,8 +82,8 @@ void    AquabotNode::_imageProcessorCallback() {
 
             if (yBoxMin > dynamicHorizon) {
 
-                double      distance = MAX_VIEW_DIST / (yBoxMin - dynamicHorizon + 1);
-                double      deviation[2];
+                double  distance = MAX_VIEW_DIST / (yBoxMin - dynamicHorizon + 1);
+                double  deviation[2];
 
                 deviation[LEFT] = (xMid - boundingBox.x) * xRadianPerPixel;
                 deviation[RIGHT] = (boundingBox.x + boundingBox.width - xMid) * xRadianPerPixel;

@@ -84,6 +84,7 @@ class AquabotNode : public rclcpp::Node {
     void  _getTripState(int &);
     void  _getCameraState(int &);
     void  _getTargetOrientation(double &);
+    void  _getLastQrCode(std::string &);
 
     //  - - - - - Commands Setters  - - - - - //
     void  _setTargetGpsData(const double [2]);
@@ -92,6 +93,7 @@ class AquabotNode : public rclcpp::Node {
     void  _setTripState(const int &);
     void  _setCameraState(const int &);
     void  _setTargetOrientation(const double &);
+    void  _setLastQrCode(const std::string &);
 
     //  - - - - - Commands Utils  - - - - - //
     void  _degToMeter(double [2]);
@@ -116,6 +118,8 @@ class AquabotNode : public rclcpp::Node {
     int _cameraState;
 
     cv::Mat _lastFrame;
+
+    std::string _lastQrCode;
 
     //  - - - - - Publishers  - - - - - //
     // Thrusters
