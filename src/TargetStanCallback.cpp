@@ -46,7 +46,7 @@ void	AquabotNode::_targetStanCallback() {
 
 		}
 
-		int	delta_power = (int)(((delta_orientation) / EPSILON) * 10);
+		int	delta_power = (int)(((delta_orientation) / EPSILON) * 5);
 
 		if (delta_orientation > 40 * EPSILON) {
 
@@ -322,79 +322,44 @@ void	AquabotNode::_targetStanCallback() {
 		// Thrust[RIGHT] = std::max(-300, std::min(Thrust[RIGHT], 300));
 		// this->_setThrusterThrust(Thrust);
 
-		if (delta_orientation < 5 * EPSILON && delta_orientation > 5 * -EPSILON) {
-			setThrusterPos[LEFT] = 45 * -EPSILON; // interieur
+
+
+
+		if (delta_orientation < 20 * EPSILON && delta_orientation > 20 * -EPSILON && distance > 9 && distance < 11) { // tour normal
+			setThrusterPos[LEFT] = 45 * EPSILON; // interieur
 			setThrusterPos[RIGHT] = 45 * EPSILON; // exterieur
-
-		}
-		setThrusterPos[LEFT] = 45 * -EPSILON;
-		setThrusterPos[RIGHT] = 45 * EPSILON;
-		this->_setThrusterPos(setThrusterPos);
-
-		if (delta_orientation > 0) {
-
-			if (distance < 10) {
-				Thrust[LEFT] = 150;
-				Thrust[RIGHT] = (int)(-50 * abs(distance - 10));
-			} else {
-				Thrust[LEFT] = 150;
-				Thrust[RIGHT] = (int)(50 * abs(distance - 10));
-			}
+			Thrust[LEFT] = -500;
+			Thrust[RIGHT] = 500;
 
 		} else {
+			setThrusterPos[LEFT] = delta_orientation;
+			setThrusterPos[RIGHT] = delta_orientation;
 
-			if (distance < 10) {
-				Thrust[LEFT] = (int)(-50 * abs(distance - 10));
-				Thrust[RIGHT] = -10;
-			} else {
+			if (distance > 10.1) { // pas bonne distance et pas bonne orientation
 				Thrust[LEFT] = (int)(50 * abs(distance - 10));
-				Thrust[RIGHT] = 10;
+				Thrust[RIGHT] = (int)(50 * abs(distance - 10));
+			} else  if (distance < 9.9){
+				setThrusterPos[LEFT] *= -1;
+				setThrusterPos[RIGHT] *= -1;
+				Thrust[LEFT] = (int)(-50 * abs(distance - 10));
+				Thrust[RIGHT] = (int)(-50 * abs(distance - 10));
+			} else { // bonne distance mais orientation pas correct
+				Thrust[LEFT] = 20;
+				Thrust[RIGHT] = 20;
+				if (delta_orientation < 0) {
+					setThrusterPos[LEFT] *= -1;
+					Thrust[LEFT] *= -1;
+				}
+				else {
+					setThrusterPos[RIGHT] *= -1;
+					Thrust[RIGHT] *= -1;
+				}
+
 			}
 
 		}
-
-		Thrust[LEFT] = 40;
-		Thrust[RIGHT] = (int)(300 * (distance - 10));
-
+		this->_setThrusterPos(setThrusterPos);
 		this->_setThrusterThrust(Thrust);
-
-
-
-
-
-		// // Fixation des positions des thrusters
-		// setThrusterPos[LEFT] = 45 * -EPSILON; // Orientation fixe du moteur gauche
-		// setThrusterPos[RIGHT] = 45 * EPSILON; // Orientation fixe du moteur droit
-		// this->_setThrusterPos(setThrusterPos);
-
-		// // Définition des coefficients pour la modulation dynamique
-		// double base_power = 1000; // Puissance minimale pour garantir le mouvement
-
-		// // Ajustement des poussées en fonction de la distance et de la direction
-		// if (delta_orientation < 0) { // Sens horaire
-		// 	if (distance < 10.01) { // Trop proche de l'éolienne
-		// 		Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
-		// 		Thrust[RIGHT] = (int)(200 * (distance - 10));                  // Recule pour augmenter la distance
-		// 	} else { // Trop loin de l'éolienne
-		// 		Thrust[LEFT] = (int)(base_power * (distance - 10));       // Augmente la poussée pour rapprocher
-		// 		Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
-		// 	}
-		// } else { // Sens antihoraire
-		// 	if (distance < 10.01) { // Trop proche de l'éolienne
-		// 		Thrust[LEFT] = (int)(200 * (distance - 10));;                   // Recule pour augmenter la distance
-		// 		Thrust[RIGHT] = (int)base_power;                            // Force de base pour tourner
-		// 	} else { // Trop loin de l'éolienne
-		// 		Thrust[LEFT] = (int)base_power;                             // Force de base pour tourner
-		// 		Thrust[RIGHT] = (int)(base_power * (distance - 10));      // Augmente la poussée pour rapprocher
-		// 	}
-		// }
-		// // Appliquer les poussées aux moteurs
-		// this->_setThrusterThrust(Thrust);
-
-
-
-
-
 
 	}
 }
