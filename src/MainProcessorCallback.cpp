@@ -32,19 +32,21 @@ void    AquabotNode::_mainProcessorCallback() {
 
         case SEARCH: {
 
-            // RCLCPP_INFO(this->get_logger(), "SEARCH PHASE !");
-
-            std::list<std::array<double, 3>>    windTurbines;
-            static int                          currentTurbin = 0;
-            double                              targetPos[2];
-            int                                 TripState;
+            static std::chrono::time_point<std::chrono::steady_clock>   timer;
+            static int      currentTurbin = 0;
+            static double   additionalZ = 0;
+            static bool     avoidance = 0;
+            int             TripState;
 
             this->_getTripState(TripState);
+            // RCLCPP_INFO(this->get_logger(), "%d", TripState);
             switch (TripState) {
 
                 case -1: {
 
-                    RCLCPP_INFO(this->get_logger(), "-1");
+
+                    std::list<std::array<double, 3>>    windTurbines;
+                    double                              targetPos[2];
 
                     this->_getWindTurbinData(windTurbines);
                     std::list<std::array<double, 3>>::iterator  it = windTurbines.begin();
@@ -54,47 +56,70 @@ void    AquabotNode::_mainProcessorCallback() {
                         return ;
                     targetPos[X] = (*it)[X];
                     targetPos[Y] = (*it)[Y];
-                    targetPos[X] -= std::cos((*it)[Z]) * 30;
-                    targetPos[Y] -= std::sin((*it)[Z]) * 30;
+                    targetPos[X] -= std::cos((*it)[Z] + additionalZ) * 12;
+                    targetPos[Y] -= std::sin((*it)[Z] + additionalZ) * 12;
                     this->_setTargetGpsData(targetPos);
                     this->_setTargetOrientation((*it)[Z]);
                     this->_setTripState(0);
-                    break ;
+                    RCLCPP_INFO(this->get_logger(), "setting wt target");
+                    return ;
                 }
                 case 0: {
 
-                    RCLCPP_INFO(this->get_logger(), "0");
-
-                    break ;
+                    this->_setCameraPos(0);
+                    return ;
                 }
                 case 1: {
 
-                    RCLCPP_INFO(this->get_logger(), "1");
+                    double  targetPos[2];
+                    double  obstacle[2];
+                    double  boatPos[2];
+                    double  boatOrientation[3];
+                    double  targetDistance;
 
                     this->_setCameraPos(0);
-                    break ;
+                    this->_getGpsData(boatPos);
+                    this->_getTargetGpsData(targetPos);
+                    this->_getAvoidanceTarget(obstacle);
+                    targetDistance = std::sqrt(std::pow(targetPos[X] - boatPos[X], 2) + std::pow(targetPos[Y] - boatPos[Y], 2));
+                    // if (obstacle[RANGE] < 1.0) // temp
+                    //     return ;
+                    if (obstacle[RANGE] > 70.0 || obstacle[RANGE] < 1.0 || obstacle[RANGE] > targetDistance - 10) {// || std::abs(obstacle[RANGE] - targetDistance) < 10.0) {
+
+                        // RCLCPP_INFO(this->get_logger(), "rejected obstacle avoidance at %fm, %fr !", obstacle[RANGE], obstacle[BEARING]);
+                        return ;
+                    }
+                    if (avoidance) {
+
+                        RCLCPP_INFO(this->get_logger(), "already in avoidance");
+                        return ;
+                    }
+                    avoidance = true;
+                    this->_getImuData(0, 0, boatOrientation);
+                    boatOrientation[Z] -= obstacle[BEARING];
+                    targetPos[X] = boatPos[X] + std::cos(boatOrientation[Z]) * obstacle[RANGE];
+                    targetPos[Y] = boatPos[Y] + std::sin(boatOrientation[Z]) * obstacle[RANGE];
+                    this->_setTargetGpsData(targetPos);
+                    this->_setTripState(0);
+                    RCLCPP_INFO(this->get_logger(), "accepted obstacle avoidance at %fm, %fr !", obstacle[RANGE], obstacle[BEARING]);
+                    return ;
                 }
                 case 2: {
 
-                    RCLCPP_INFO(this->get_logger(), "2");
-
-                    break ;
+                    return ;
                 }
                 case 3: {
 
-                    RCLCPP_INFO(this->get_logger(), "3");
-
-                    break ;
+                    return ;
                 }
                 case 4: {
-
-                    RCLCPP_INFO(this->get_logger(), "4");
 
                     static std::string  lastCode;
                     std::string         code;
 
                     this->_setCameraToTarget();
                     this->_getLastQrCode(code);
+                    RCLCPP_INFO(this->get_logger(), "%lds passer", (std::chrono::steady_clock::now() - timer).count());
                     if (!code.empty() && code != lastCode) {
 
                         RCLCPP_INFO(this->get_logger(), "New QR Code detected: %s", code.c_str());
@@ -107,25 +132,38 @@ void    AquabotNode::_mainProcessorCallback() {
                         currentTurbin++;
                         this->_setTripState(-1);
                     }
-                    break ;
+                    else if ((std::chrono::steady_clock::now() - timer).count() > 3) {
+
+                        RCLCPP_INFO(this->get_logger(), "3s passer");
+
+                        additionalZ += EPSILON * 45;
+                        this->_setTripState(-1);
+                    }
+                    return ;
                 }
                 case 5: {
 
-                    RCLCPP_INFO(this->get_logger(), "5");
-
+                    double  targetPos[2];
                     double  orientation;
 
+                    if (avoidance) {
+
+                        avoidance = false;
+                        this->_setTripState(-1);
+                        return ;
+                    }
                     this->_getTargetOrientation(orientation);
                     this->_getTargetGpsData(targetPos);
-                    targetPos[X] += std::cos(orientation) * 20;
-                    targetPos[Y] += std::sin(orientation) * 20;
+                    targetPos[X] += std::cos(orientation) * 10;
+                    targetPos[Y] += std::sin(orientation) * 10;
                     this->_setTargetGpsData(targetPos);
                     this->_setTripState(4);
                     this->_setCameraToTarget();
-                    break ;
+                    timer = std::chrono::steady_clock::now();
+                    return ;
                 }
             }
-            break ;
+            return ;
         }
         case RALLY: {
 
@@ -139,11 +177,11 @@ void    AquabotNode::_mainProcessorCallback() {
             this->_getTargetGpsData(tmpPos);
             if (tmpPos[X] != targetPos[X] && tmpPos[Y] != targetPos[Y]) {
 
-                RCLCPP_INFO(this->get_logger(), "pos = %f, %f", targetPos[X], targetPos[Y]);
+                // RCLCPP_INFO(this->get_logger(), "pos = %f, %f", targetPos[X], targetPos[Y]);
                 this->_setTargetGpsData(targetPos);
                 this->_setTripState(0);
             }
-            break ;
+            return ;
         }
         default:
             return ;

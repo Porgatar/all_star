@@ -75,8 +75,8 @@ void    AquabotNode::_imageProcessorCallback() {
                     result *= -1;
                 if (result) {
 
-                    finalResult[RANGE] = result;
-                    finalResult[BEARING] = distance;
+                    finalResult[RANGE] = distance * 2;
+                    finalResult[BEARING] = result * 2;
                 }
 
                 // debug
