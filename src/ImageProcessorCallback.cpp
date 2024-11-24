@@ -70,7 +70,7 @@ void    AquabotNode::_obstacleDetector(cv::Mat & frame) {
             if (result) {
 
                 finalResult[RANGE] = distance;
-                finalResult[BEARING] = result * 2.5;
+                finalResult[BEARING] = result;
             }
 
             // debug
@@ -96,7 +96,7 @@ void    AquabotNode::_imageProcessorCallback(void) {
     this->_obstacleDetector(frame);
 
     // debug image topic
-    static auto publisher = this->create_publisher<sensor_msgs::msg::Image>("/test", rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable));
+    static auto publisher = this->create_publisher<sensor_msgs::msg::Image>("/aquabot/camera/debugImage", rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable));
     auto        msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
 
     publisher->publish(*msg);

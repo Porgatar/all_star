@@ -57,9 +57,9 @@ void    AquabotNode::_search(void) {
                 return ;
             avoidance = true;
             this->_getImuData(0, 0, boatOrientation);
-            boatOrientation[Z] -= obstacle[BEARING];
-            targetPos[X] = boatPos[X] + std::cos(boatOrientation[Z]) * (obstacle[RANGE] * 3);
-            targetPos[Y] = boatPos[Y] + std::sin(boatOrientation[Z]) * (obstacle[RANGE] * 3);
+            boatOrientation[Z] -= obstacle[BEARING] * 3;
+            targetPos[X] = boatPos[X] + std::cos(boatOrientation[Z]) * (obstacle[RANGE] * 2);
+            targetPos[Y] = boatPos[Y] + std::sin(boatOrientation[Z]) * (obstacle[RANGE] * 2);
             this->_setTargetGpsData(targetPos);
             this->_setTripState(0);
             RCLCPP_INFO(this->get_logger(), "accepted obstacle avoidance at %fm, %fr !", obstacle[RANGE], obstacle[BEARING]);
@@ -98,7 +98,7 @@ void    AquabotNode::_search(void) {
                 additionalZ = 0;
                 this->_setTripState(-1);
             }
-            else if (elapsed_seconds > 3) {
+            else if (elapsed_seconds > 1) {
 
                 additionalZ += EPSILON * 90;
                 if (additionalZ > EPSILON * 271)
