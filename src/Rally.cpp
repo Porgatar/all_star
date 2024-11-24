@@ -19,15 +19,18 @@ void    AquabotNode::_rally(void) {
 
             double  criticalWindTurbin[2];
             double  targetPos[2];
+            double  boatOrientation[3];
 
             this->_getCriticalWindTurbinData(criticalWindTurbin);
             this->_getGpsData(targetPos);
-            targetPos[X] += std::cos(criticalWindTurbin[BEARING]) * criticalWindTurbin[RANGE];
-            targetPos[Y] += std::sin(criticalWindTurbin[BEARING]) * criticalWindTurbin[RANGE];
+            this->_getImuData(0, 0, boatOrientation);
+            boatOrientation[Z] += criticalWindTurbin[BEARING];
+            targetPos[X] += std::cos(boatOrientation[Z]) * criticalWindTurbin[RANGE] - (std::cos(boatOrientation[Z]) * 10);
+            targetPos[Y] += std::sin(boatOrientation[Z]) * criticalWindTurbin[RANGE] - (std::cos(boatOrientation[Z]) * 10);
             this->_setTargetGpsData(targetPos);
-            this->_setTargetOrientation(criticalWindTurbin[BEARING]);
+            this->_setTargetOrientation(boatOrientation[Z]);
             this->_setTripState(0);
-            RCLCPP_INFO(this->get_logger(), "setting new windturbin target");
+            RCLCPP_INFO(this->get_logger(), "setting new windturbin target at %fm, %fr", criticalWindTurbin[RANGE], criticalWindTurbin[BEARING]);
             return ;
         }
         case 0: {
@@ -48,19 +51,15 @@ void    AquabotNode::_rally(void) {
             this->_getTargetGpsData(targetPos);
             this->_getAvoidanceTarget(obstacle);
             targetDistance = std::sqrt(std::pow(targetPos[X] - boatPos[X], 2) + std::pow(targetPos[Y] - boatPos[Y], 2));
-            if (obstacle[RANGE] > 70.0 || obstacle[RANGE] < 1.0 || obstacle[RANGE] > targetDistance - 5)
+            if (obstacle[RANGE] > 50.0 || obstacle[RANGE] < 1.0 || obstacle[RANGE] > targetDistance - 5)
                 return ;
-            if (avoidance) {
-
-                RCLCPP_INFO(this->get_logger(), "already in avoidance");
-                return ;
-            }
             avoidance = true;
             this->_getImuData(0, 0, boatOrientation);
             boatOrientation[Z] -= obstacle[BEARING];
-            targetPos[X] = boatPos[X] + std::cos(boatOrientation[Z]) * obstacle[RANGE];
-            targetPos[Y] = boatPos[Y] + std::sin(boatOrientation[Z]) * obstacle[RANGE];
+            targetPos[X] = boatPos[X] + std::cos(boatOrientation[Z]) * (obstacle[RANGE] * 3);
+            targetPos[Y] = boatPos[Y] + std::sin(boatOrientation[Z]) * (obstacle[RANGE] * 3);
             this->_setTargetGpsData(targetPos);
+            this->_setTargetOrientation(boatOrientation[Z]);
             this->_setTripState(0);
             RCLCPP_INFO(this->get_logger(), "accepted obstacle avoidance at %fm, %fr !", obstacle[RANGE], obstacle[BEARING]);
             return ;

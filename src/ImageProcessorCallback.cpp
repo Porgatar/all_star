@@ -69,8 +69,8 @@ void    AquabotNode::_obstacleDetector(cv::Mat & frame) {
                 result *= -1;
             if (result) {
 
-                finalResult[RANGE] = distance * 2;
-                finalResult[BEARING] = result * 2;
+                finalResult[RANGE] = distance;
+                finalResult[BEARING] = result * 2.5;
             }
 
             // debug

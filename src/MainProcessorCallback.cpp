@@ -31,15 +31,15 @@ void    AquabotNode::_stabilize(void) {
 
 void    AquabotNode::_turnAround(void) {
 
-    RCLCPP_INFO(this->get_logger(), "Suite au 'je sais pas encore quoi mettre'");
+    RCLCPP_INFO(this->get_logger(), "Suite aux nouvelles normes écologique qui ont drastiquement augmenté le prix du baril de pétrole");
     RCLCPP_INFO(this->get_logger(), "Ce Bateau n'iras malheureusement pas plus loin...");
     this->_finished();
 }
 
 void    AquabotNode::_finished(void) {
 
-    RCLCPP_INFO(this->get_logger(), "Merci d'avoir selectionner la Team 42 all star !");
-    RCLCPP_INFO(this->get_logger(), "Nous esperons que vous avez passer un agreable moment pendant ce dernier voyage de maintenance a bord de notre BabySharky_V0.1");
+    RCLCPP_INFO(this->get_logger(), "Merci d'avoir selectionné la Compagnie 42 all star !");
+    RCLCPP_INFO(this->get_logger(), "Nous ésperons que vous avez passé un agréable moment pendant ce dernier voyage de maintenance a bord de notre BabySharky_V0.1");
     RCLCPP_INFO(this->get_logger(), "Shuting down...");
 
     rclcpp::shutdown();
