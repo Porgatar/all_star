@@ -60,10 +60,10 @@ void    AquabotNode::_rally(void) {
         }
         case 5: {
 
-            std::list<std::array<double, 3>>    windTurbines;
-            double                              targetPos[2];
-            double                              boatPos[2];
-            double                              targetDistance;
+            // std::list<std::array<double, 3>>    windTurbines;
+            // double                              targetPos[2];
+            // double                              boatPos[2];
+            // double                              targetDistance;
 
             if (avoidance) {
 
@@ -71,20 +71,20 @@ void    AquabotNode::_rally(void) {
                 this->_setTripState(-1);
                 return ;
             }
-            this->_getGpsData(boatPos);
-            this->_getWindTurbinData(windTurbines);
-            std::list<std::array<double, 3>>::iterator  it;
+            // this->_getGpsData(boatPos);
+            // this->_getWindTurbinData(windTurbines);
+            // std::list<std::array<double, 3>>::iterator  it;
 
-            for (it = windTurbines.begin(); it != windTurbines.end(); it++) {
+            // for (it = windTurbines.begin(); it != windTurbines.end(); it++) {
 
-                targetPos[X] = (*it)[X];
-                targetPos[Y] = (*it)[Y];
-                targetDistance = std::sqrt(std::pow(targetPos[X] - boatPos[X], 2) + std::pow(targetPos[Y] - boatPos[Y], 2));
-                if (targetDistance < 15)
-                    break ;
-            }
-            this->_setTargetGpsData(targetPos);
-            this->_setTripState(4);
+            //     targetPos[X] = (*it)[X];
+            //     targetPos[Y] = (*it)[Y];
+            //     targetDistance = std::sqrt(std::pow(targetPos[X] - boatPos[X], 2) + std::pow(targetPos[Y] - boatPos[Y], 2));
+            //     if (targetDistance < 15)
+            //         break ;
+            // }
+            // this->_setTargetGpsData(targetPos);
+            // this->_setTripState(4);
             return ;
         }
     }

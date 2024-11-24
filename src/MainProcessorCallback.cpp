@@ -26,7 +26,35 @@ void    AquabotNode::_setCameraToTarget(const double & additionalZ) {
 
 void    AquabotNode::_stabilize(void) {
 
-    RCLCPP_INFO(this->get_logger(), "stabilizing...");
+    int                 TripState;
+
+    this->_getTripState(TripState);
+    switch (TripState) {
+
+        case 5: {
+
+            std::list<std::array<double, 3>>    windTurbines;
+            double                              targetPos[2];
+            double                              boatPos[2];
+            double                              targetDistance;
+
+            this->_getGpsData(boatPos);
+            this->_getWindTurbinData(windTurbines);
+            std::list<std::array<double, 3>>::iterator  it;
+
+            for (it = windTurbines.begin(); it != windTurbines.end(); it++) {
+
+                targetPos[X] = (*it)[X];
+                targetPos[Y] = (*it)[Y];
+                targetDistance = std::sqrt(std::pow(targetPos[X] - boatPos[X], 2) + std::pow(targetPos[Y] - boatPos[Y], 2));
+                if (targetDistance < 20)
+                    break ;
+            }
+            this->_setTargetGpsData(targetPos);
+            this->_setTripState(4);
+            return ;
+        }
+    }
 }
 
 void    AquabotNode::_turnAround(void) {

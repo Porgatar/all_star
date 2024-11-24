@@ -175,8 +175,8 @@ void	AquabotNode::_targetStanCallback() {
 
 		} else {
 
-			Thrust[LEFT] = (int)(40 * (distance)* 0.4);
-			Thrust[RIGHT] = (int)(40  * (distance)* 0.4);
+			Thrust[LEFT] = (int)(40 * (distance)* 0.1);
+			Thrust[RIGHT] = (int)(40 * (distance)* 0.1);
 			this->_setThrusterThrust(Thrust);
 
 			setThrusterPos[LEFT] = delta_orientation;
