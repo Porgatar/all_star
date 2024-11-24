@@ -15,7 +15,7 @@ https://github.com/sirehna/Aquabot-Competitor#installation
 →    “sudo apt-get update”
 →    “sudo apt-get install libzbar-dev”
 
-to run our code, don’t forget to source your installation “bashrc/zshrc/...” and launch your sim world with “ros2 launch ...”.
+to run our code, don’t forget to source your installation “.bash/.zsh/...” and launch your sim world with “ros2 launch ...”.
 
 →    “ros2 run all_star BabySharky”
 
