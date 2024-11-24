@@ -52,9 +52,23 @@ class AquabotNode : public rclcpp::Node {
 
   private:
     //  - - - - - Commands Loops - - - - - //
-    void  _targetStanCallback();
-    void  _imageProcessorCallback();
-    void  _mainProcessorCallback();
+    void  _targetStanCallback(void);
+    void  _imageProcessorCallback(void);
+    void  _mainProcessorCallback(void);
+    //  - - - - - Main Commands - - - - - //
+    // _targetStanCallback
+
+    // _imageProcessorCallback
+    void  _qrDetector(cv::Mat &);
+    void  _obstacleDetector(cv::Mat &);
+
+    // _mainProcessorCallback
+    void  _setCameraToTarget(const double &);
+    void  _search(void);
+    void  _rally(void);
+    void  _stabilize(void);
+    void  _turnAround(void);
+    void  _finished(void);
 
     //  - - - - - Commands Publisher  - - - - - //
     // Thrusters
@@ -96,7 +110,6 @@ class AquabotNode : public rclcpp::Node {
     //  - - - - - Commands Utils  - - - - - //
     void  _degToMeter(double [2]);
     void  _meterToDeg(double [2]);
-    void  _setCameraToTarget(void);
 
     //  - - - - - Main Variables  - - - - - //
     double  _gpsOrigin[2];
