@@ -1,6 +1,6 @@
 
 The 42 All star group was created to discover a business project,
-and explore technologies not necessarily used in our school (api requet, simulation, multithreading, etc.).
+and explore technologies not necessarily used in our school (api request, simulation, etc.).
 this project challenged us on our knowledge and ability to discover a different environment,
 but also on our ability to make a project report readable for others.
 
