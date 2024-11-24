@@ -31,7 +31,7 @@ void	AquabotNode::_targetStanCallback() {
 		delta_orientation += avoidanceOrientation * 5;
  // --------PRINTEUR-------- //
 	// if (this->_statementTrip < 3)
-		RCLCPP_INFO(this->get_logger(), "distance = %f statment %d", distance, this->_statementTrip);
+		RCLCPP_INFO(this->get_logger(), "distance = %f delta_o %f", distance, delta_orientation);
 	// RCLCPP_INFO(this->get_logger(), "delta_o %f", delta_orientation);
 	// RCLCPP_INFO(this->get_logger(), "gpspos = %f;%f", gpsPos[0], gpsPos[1]);
 	// RCLCPP_INFO(this->get_logger(), "accel %f %f velo %f", acceleration[0], acceleration[1], angularVelocity);
@@ -325,33 +325,39 @@ void	AquabotNode::_targetStanCallback() {
 
 
 
-		if (delta_orientation < 20 * EPSILON && delta_orientation > 20 * -EPSILON && distance > 9 && distance < 11) { // tour normal
+		if (delta_orientation < 15 * EPSILON && delta_orientation > 15 * -EPSILON && distance > 9.5 && distance < 10.5) { // tour normal
 			setThrusterPos[LEFT] = 45 * EPSILON; // interieur
 			setThrusterPos[RIGHT] = 45 * EPSILON; // exterieur
-			Thrust[LEFT] = -500;
-			Thrust[RIGHT] = 500;
+			Thrust[LEFT] = -600;
+			Thrust[RIGHT] = 550;
 
 		} else {
 			setThrusterPos[LEFT] = delta_orientation;
 			setThrusterPos[RIGHT] = delta_orientation;
 
-			if (distance > 10.1) { // pas bonne distance et pas bonne orientation
-				Thrust[LEFT] = (int)(50 * abs(distance - 10));
-				Thrust[RIGHT] = (int)(50 * abs(distance - 10));
-			} else  if (distance < 9.9){
+			if (distance > 10.1) { // pas bonne distance et pas bonne
+				RCLCPP_INFO(this->get_logger(), "1");
 				setThrusterPos[LEFT] *= -1;
 				setThrusterPos[RIGHT] *= -1;
-				Thrust[LEFT] = (int)(-50 * abs(distance - 10));
-				Thrust[RIGHT] = (int)(-50 * abs(distance - 10));
+				Thrust[LEFT] = (int)(100 * abs(distance - 10));
+				Thrust[RIGHT] = (int)(100 * abs(distance - 10));
+			} else  if (distance < 9.9){
+				RCLCPP_INFO(this->get_logger(), "2");
+				// setThrusterPos[LEFT] *= -1;
+				// setThrusterPos[RIGHT] *= -1;
+				Thrust[LEFT] = (int)(-100 * abs(distance - 10));
+				Thrust[RIGHT] = (int)(-100 * abs(distance - 10));
 			} else { // bonne distance mais orientation pas correct
-				Thrust[LEFT] = 20;
-				Thrust[RIGHT] = 20;
+				Thrust[LEFT] = 80;
+				Thrust[RIGHT] = 80;
 				if (delta_orientation < 0) {
-					setThrusterPos[LEFT] *= -1;
+					RCLCPP_INFO(this->get_logger(), "3");
+					setThrusterPos[RIGHT] *= -1;
 					Thrust[LEFT] *= -1;
 				}
 				else {
-					setThrusterPos[RIGHT] *= -1;
+					RCLCPP_INFO(this->get_logger(), "4");
+					setThrusterPos[LEFT] *= -1;
 					Thrust[RIGHT] *= -1;
 				}
 
